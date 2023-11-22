@@ -25,17 +25,17 @@ fn main() {
     }
 }
 
-struct Game {
+pub struct Game {
     player: String,
     health: String,
     inventory: Vec<InventoryElement>,
 }
 
-struct InventoryElement {
+pub struct InventoryElement {
     name: String,
 }
 
-trait Movement {
+pub trait Movement {
     fn north(game: Game) {}
     fn south(game: Game) {}
     fn west(game: Game) {}
@@ -43,15 +43,15 @@ trait Movement {
 }
 
 #[derive(Debug)]
-enum MapBlockTypes {
+pub enum MapBlockTypes {
     Path,
     NotWalkable,
     Trap,
 }
 
 #[derive(Debug)]
-struct MapBlock {
-    i: i32,
-    j: i32,
+pub struct MapBlock {
+    i: usize,
+    j: usize,
     block_type: MapBlockTypes,
 }
