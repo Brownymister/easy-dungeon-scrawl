@@ -1,71 +1,31 @@
 use crate::{MapBlock, MapBlockTypes};
 
-type Map = Vec<Vec<MapBlock>>;
+pub type Map = Vec<Vec<MapBlock>>;
 
-/*
- * |x|x|x|x|x|x|x|x|x|x|
- * |x|_|_|x|x|_|_|_|_|x|
- * |x|_|_|x|x|_|_|_|_|x|
- * |x|_|_|x|x|_|_|_|_|x|
- * |x|_|_|x|x|x|_|_|x|x|
- * |x|_|_|x|x|x|_|_|x|x|
- * |x|_|_|_|_|_|_|_|x|x|
- * |x|x|x|_|_|_|x|x|x|x|
- * |x|x|x|x|_|_|x|x|x|x|
- * |x|x|x|x|_|_|x|x|x|x|
-*/
-pub fn generate_map() -> Map {
+pub fn generate_map(map_str: String) -> Map {
     let mut map = vec![];
-    let mut first_row = vec![];
-    for i in 0..10 {
-        first_row.push(MapBlock {
-            i,
-            j: 0,
-            block_type: MapBlockTypes::NotWalkable,
-        })
-    }
 
-    map.push(first_row);
-    for _ in 0..3 {
-        let second_row = generate_second_row();
-        map.push(second_row);
-    }
+    for (j, row_str) in map_str.split("\n").enumerate() {
+        let mut row: Vec<MapBlock> = vec![];
 
+        for (i, item) in row_str.split("|").filter(|x| x != &"").enumerate() {
+            row.push(MapBlock {
+                i: i.try_into().unwrap(),
+                j: j.try_into().unwrap(),
+                block_type: get_block_type(item),
+            });
+        }
+        map.push(row);
+    }
     return map;
 }
 
-fn generate_second_row() -> Vec<MapBlock> {
-    let mut second_row = vec![];
-    second_row = push_not_walkable(second_row, 0, 1);
-    for i in 1..3 {
-        second_row.push(MapBlock {
-            i,
-            j: 1,
-            block_type: MapBlockTypes::Path,
-        });
+fn get_block_type(str: &str) -> MapBlockTypes {
+    match str {
+        "x" => MapBlockTypes::NotWalkable,
+        "_" => MapBlockTypes::Path,
+        _ => MapBlockTypes::NotWalkable,
     }
-
-    for i in 3..5 {
-        second_row = push_not_walkable(second_row, i, 1);
-    }
-
-    for i in 5..9 {
-        second_row.push(MapBlock {
-            i,
-            j: 1,
-            block_type: MapBlockTypes::Path,
-        });
-    }
-    second_row = push_not_walkable(second_row, 9, 1);
-    return second_row;
-}
-fn push_not_walkable(mut row: Vec<MapBlock>, i: usize, j: usize) -> Vec<MapBlock> {
-    row.push(MapBlock {
-        i,
-        j,
-        block_type: MapBlockTypes::NotWalkable,
-    });
-    return row;
 }
 
 #[cfg(test)]
@@ -74,12 +34,25 @@ mod tests {
 
     #[test]
     fn test_map_gen() {
-        let map = generate_map();
+        let map = generate_map(
+            "|x|x|x|x|x|x|x|x|x|x|
+|x|_|_|x|x|_|_|_|_|x|
+|x|_|_|x|x|_|_|_|_|x|
+|x|_|_|x|x|_|_|_|_|x|
+|x|_|_|x|x|x|_|_|x|x|
+|x|_|_|x|x|x|_|_|x|x|
+|x|_|_|_|_|_|_|_|x|x|
+|x|x|x|_|_|_|x|x|x|x|
+|x|x|x|x|_|_|x|x|x|x|
+|x|x|x|x|_|_|x|x|x|x|"
+                .to_string(),
+        );
         visulize_map(map)
     }
 
     fn visulize_map(map: Map) {
         println!("{:?}", map);
+        println!("countertest str:");
         for j in map {
             let mut row_str = "".to_string();
             for (i, item) in j.iter().enumerate() {
