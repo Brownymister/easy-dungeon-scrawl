@@ -51,7 +51,10 @@ pub fn visulize_map(map: Map, player_pos: Option<(usize, usize)>) {
                 // MapBlockTypes::Trap => "",
                 _ => " ",
             };
-            if item.j == player_pos.unwrap().1 && item.i == player_pos.unwrap().0 {
+            if player_pos.is_some()
+                && item.j == player_pos.unwrap().1
+                && item.i == player_pos.unwrap().0
+            {
                 get_symbol = "P";
             }
             row_str.push_str(&format!("|{}", get_symbol))
