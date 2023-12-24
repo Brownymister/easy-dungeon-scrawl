@@ -21,6 +21,13 @@ pub fn generate_map(map_str: String) -> Map {
 }
 
 fn get_block_type(str: &str) -> MapBlockTypes {
+    let re = regex::Regex::new("^[1-9]*$").unwrap();
+    let caps = re.captures(str);
+    if caps.is_some() {
+        return MapBlockTypes::NewMapTrigger {
+            map_id: (&caps.unwrap()[0]).to_string(),
+        };
+    }
     match str {
         "x" => MapBlockTypes::NotWalkable,
         "_" => MapBlockTypes::Path,
@@ -28,9 +35,43 @@ fn get_block_type(str: &str) -> MapBlockTypes {
     }
 }
 
+pub fn visulize_map(map: Map, player_pos: Option<(usize, usize)>) {
+    println!("{:?}", map);
+    println!("countertest str:");
+    for j in map {
+        let mut row_str = "".to_string();
+        for (i, item) in j.iter().enumerate() {
+            assert_eq!(i, item.i);
+            let mut get_symbol = match &item.block_type {
+                MapBlockTypes::Path => "_",
+                MapBlockTypes::NotWalkable => "x",
+                MapBlockTypes::NewMapTrigger { map_id } => map_id.as_str(),
+                MapBlockTypes::EnemyTrigger { enemy_id } => enemy_id.as_str(),
+                MapBlockTypes::ItemTrigger { time_id } => time_id.as_str(),
+                // MapBlockTypes::Trap => "",
+                _ => " ",
+            };
+            if item.j == player_pos.unwrap().1 && item.i == player_pos.unwrap().0 {
+                get_symbol = "P";
+            }
+            row_str.push_str(&format!("|{}", get_symbol))
+        }
+        row_str.push_str("|");
+        println!("{}", row_str);
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::map_gen::{generate_map, Map, MapBlockTypes};
+    use crate::map_gen::{generate_map, get_block_type, visulize_map};
+
+    #[test]
+    fn test_get_block_types() {
+        let b = get_block_type("1");
+        let re = regex::Regex::new("^[0-9]*$").unwrap();
+        let caps = re.captures("1").unwrap();
+        println!("get_block_type {:?}", (&caps[0]).parse::<usize>().unwrap());
+    }
 
     #[test]
     fn test_map_gen() {
@@ -47,26 +88,6 @@ mod tests {
 |x|x|x|x|_|_|x|x|x|x|"
                 .to_string(),
         );
-        visulize_map(map)
-    }
-
-    fn visulize_map(map: Map) {
-        println!("{:?}", map);
-        println!("countertest str:");
-        for j in map {
-            let mut row_str = "".to_string();
-            for (i, item) in j.iter().enumerate() {
-                assert_eq!(i, item.i);
-                let get_symbol = match item.block_type {
-                    MapBlockTypes::Path => "_",
-                    MapBlockTypes::NotWalkable => "x",
-                    // MapBlockTypes::Trap => "",
-                    _ => "",
-                };
-                row_str.push_str(&format!("|{}", get_symbol))
-            }
-            row_str.push_str("|");
-            println!("{}", row_str);
-        }
+        visulize_map(map, None)
     }
 }

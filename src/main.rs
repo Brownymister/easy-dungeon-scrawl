@@ -4,6 +4,8 @@ use std::{
     process::exit,
 };
 
+use crate::map_gen::visulize_map;
+
 mod custom_layer;
 mod map_gen;
 
@@ -26,7 +28,7 @@ fn main() {
         .map(|map_str| map_gen::generate_map(map_str.to_string()))
         .collect();
 
-    let game = Game {
+    let mut game = Game {
         playername: game_settings.player.name,
         cur_map: maps[0].clone(),
         health: game_settings.player.total_health,
@@ -53,6 +55,10 @@ fn main() {
         println!("You typed: {}", s);
         if s == "go north" {
             game.north();
+        } else if s == "view map" {
+            println!("{:?}", visulize_map(game.cur_map.clone(), Some(game.pos)));
+        } else {
+            println!("Invalid command");
         }
     }
 }
@@ -82,22 +88,24 @@ pub struct Enemy {
 }
 
 impl Movement for Game {
-    fn north(&self) {
+    fn north(&mut self) {
         let j = self.pos.1;
         println!("{}", j);
+        println!("{:?}", self.get_map_block_type((self.pos.0, j.clone() - 1)));
         if j == 0
-            || self.get_map_block_types((self.pos.0, j.clone() - 1)) == &MapBlockTypes::NotWalkable
+            || self.get_map_block_type((self.pos.0, j.clone() - 1)) == &MapBlockTypes::NotWalkable
         {
             println!("Dort kannst du nich hin gehen.")
         } else {
             let newpos = (self.pos.0, self.pos.1 - 1);
-            println!("{:?}", newpos);
+            self.pos = newpos;
+            println!("{:?}", visulize_map(self.cur_map.clone(), Some(self.pos)));
         }
     }
 }
 
 impl Game {
-    fn get_map_block_types(&self, pos: (usize, usize)) -> &MapBlockTypes {
+    fn get_map_block_type(&self, pos: (usize, usize)) -> &MapBlockTypes {
         let i = pos.0;
         let j = pos.1;
         let row = &self.cur_map[i];
@@ -112,10 +120,10 @@ pub struct InventoryElement {
 }
 
 pub trait Movement {
-    fn north(&self) {}
-    fn south(&self) {}
-    fn west(&self) {}
-    fn east(&self) {}
+    fn north(&mut self) {}
+    fn south(&mut self) {}
+    fn west(&mut self) {}
+    fn east(&mut self) {}
 }
 
 #[derive(Debug, PartialEq, Clone)]

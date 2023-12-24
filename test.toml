@@ -1,5 +1,5 @@
 maps = ["""
-|x|x|x|x|x|x|x|x|x|x|
+|x|1|1|x|x|x|x|x|x|x|
 |x|_|_|x|x|_|_|_|_|x|
 |x|_|_|x|x|_|_|_|_|x|
 |x|_|_|x|x|_|_|_|_|x|
@@ -8,10 +8,22 @@ maps = ["""
 |x|_|_|_|_|_|_|_|x|x|
 |x|x|x|_|_|_|x|x|x|x|
 |x|x|x|x|_|_|x|x|x|x|
-|x|x|x|x|_|_|x|x|x|x|"""
+|x|x|x|x|_|_|x|x|x|x|""",
+""",
+|x|x|x|x|_|_|x|x|x|x|
+|x|x|x|x|x|x|x|x|x|x|
+|x|x|x|x|x|x|x|x|x|x|
+|x|x|x|x|x|x|x|x|x|x|
+|x|x|x|x|x|x|x|x|x|x|
+|x|x|x|x|x|x|x|x|x|x|
+|x|x|x|x|x|x|x|x|x|x|
+|x|x|x|x|x|x|x|x|x|x|
+|x|_|_|x|x|x|x|x|x|x|
+|x|0|0|x|x|x|x|x|x|x|
+"""
 ]
 
-start_pos = [2,2]
+start_pos = [1,2]
 
 [[global_items]]
 item_id = "sword"
