@@ -35,7 +35,7 @@ fn get_block_type(str: &str) -> MapBlockTypes {
     }
 }
 
-pub fn visulize_map(map: Map, player_pos: Option<(usize, usize)>) {
+pub fn visulize_map(map: Map, player_pos: Option<&crate::Pos>) {
     println!("{:?}", map);
     println!("countertest str:");
     for j in map {
@@ -52,8 +52,8 @@ pub fn visulize_map(map: Map, player_pos: Option<(usize, usize)>) {
                 _ => " ",
             };
             if player_pos.is_some()
-                && item.j == player_pos.unwrap().1
-                && item.i == player_pos.unwrap().0
+                && item.j == player_pos.unwrap().j
+                && item.i == player_pos.unwrap().i
             {
                 get_symbol = "P";
             }

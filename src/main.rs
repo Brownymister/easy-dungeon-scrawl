@@ -34,9 +34,13 @@ fn main() {
         health: game_settings.player.total_health,
         global_items: game_settings.global_items,
         inventory: vec![],
-        pos: (game_settings.start_pos[0], game_settings.start_pos[1]),
+        pos: Pos {
+            i: game_settings.start_pos[0],
+            j: game_settings.start_pos[1],
+        },
         maps,
     };
+    println!("{:?}", game);
 
     loop {
         let mut s = String::new();
@@ -53,16 +57,17 @@ fn main() {
         }
 
         println!("You typed: {}", s);
-        if s == "go north" {
+        if s == "go north" || s == "w" {
             game.north();
         } else if s == "view map" {
-            println!("{:?}", visulize_map(game.cur_map.clone(), Some(game.pos)));
+            println!("{:?}", visulize_map(game.cur_map.clone(), Some(&game.pos)));
         } else {
             println!("Invalid command");
         }
     }
 }
 
+#[derive(Debug)]
 pub struct Game {
     playername: String,
     health: i32,
@@ -70,7 +75,13 @@ pub struct Game {
     inventory: Vec<InventoryElement>,
     maps: Vec<map_gen::Map>,
     cur_map: map_gen::Map,
-    pos: (usize, usize),
+    pos: Pos,
+}
+
+#[derive(Debug)]
+pub struct Pos {
+    i: usize,
+    j: usize,
 }
 
 #[derive(Deserialize, Debug)]
@@ -87,33 +98,54 @@ pub struct Enemy {
     weapon: String,
 }
 
+pub struct charakteristiks {
+    courage: i32,
+    Strength: i32,
+    Intelligence: i32,
+    Intuition: i32,
+}
+
+
 impl Movement for Game {
     fn north(&mut self) {
-        let j = self.pos.1;
+        let j = self.pos.j;
         println!("{}", j);
-        println!("{:?}", self.get_map_block_type((self.pos.0, j.clone() - 1)));
+        println!(
+            "{:?}",
+            self.get_map_block_type(Pos {
+                i: self.pos.i,
+                j: j.clone() - 1
+            })
+        );
         if j == 0
-            || self.get_map_block_type((self.pos.0, j.clone() - 1)) == &MapBlockTypes::NotWalkable
+            || self.get_map_block_type(Pos {
+                j: j.clone() - 1,
+                i: self.pos.i,
+            }) == &MapBlockTypes::NotWalkable
         {
             println!("Dort kannst du nich hin gehen.")
         } else {
-            let newpos = (self.pos.0, self.pos.1 - 1);
+            let newpos = Pos {
+                i: self.pos.i,
+                j: self.pos.j - 1,
+            };
             self.pos = newpos;
-            println!("{:?}", visulize_map(self.cur_map.clone(), Some(self.pos)));
+            println!("{:?}", visulize_map(self.cur_map.clone(), Some(&self.pos)));
         }
     }
 }
 
 impl Game {
-    fn get_map_block_type(&self, pos: (usize, usize)) -> &MapBlockTypes {
-        let i = pos.0;
-        let j = pos.1;
-        let row = &self.cur_map[i];
-        let map_block = &row[j];
+    fn get_map_block_type(&self, pos: Pos) -> &MapBlockTypes {
+        let row = &self.cur_map[pos.j];
+        println!("{:?}", row);
+        let map_block = &row[pos.i];
+        println!("{:?}", map_block);
         return &map_block.block_type;
     }
 }
 
+#[derive(Debug)]
 pub struct InventoryElement {
     item: GameItem,
     count: usize,
