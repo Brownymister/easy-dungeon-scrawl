@@ -50,14 +50,6 @@ pub struct charakteristiks {
 impl Movement for Game {
     fn north(&mut self) {
         let j = self.pos.j;
-        // println!("{}", j);
-        // println!(
-        //     "{:?}",
-        //     self.get_map_block_type(Pos {
-        //         i: self.pos.i,
-        //         j: j.clone() - 1
-        //     })
-        // );
         if j == 0
             || self.get_map_block_type(Pos {
                 j: j.clone() - 1,
@@ -68,14 +60,72 @@ impl Movement for Game {
                 title: "Error".to_string(),
                 message: "Dort kannst du nicht hin gehen".to_string(),
             };
-            // println!("Dort kannst du nich hin gehen.")
         } else {
             let newpos = Pos {
                 i: self.pos.i,
                 j: self.pos.j - 1,
             };
             self.pos = newpos;
-            // println!("{:?}", visulize_map(&self.cur_map, Some(&self.pos)));
+        }
+    }
+
+    fn south(&mut self) {
+        if self.pos.j == self.cur_map.len() - 1
+            || self.get_map_block_type(Pos {
+                j: self.pos.j + 1,
+                i: self.pos.i,
+            }) == &MapBlockTypes::NotWalkable
+        {
+            self.info_message = InfoMessage {
+                title: "Error".to_string(),
+                message: "Dort kannst du nicht hin gehen".to_string(),
+            };
+        } else {
+            let newpos = Pos {
+                i: self.pos.i,
+                j: self.pos.j + 1,
+            };
+            self.pos = newpos;
+        }
+    }
+
+    fn west(&mut self) {
+        if self.pos.i == 0
+            || self.get_map_block_type(Pos {
+                j: self.pos.j,
+                i: self.pos.i - 1,
+            }) == &MapBlockTypes::NotWalkable
+        {
+            self.info_message = InfoMessage {
+                title: "Error".to_string(),
+                message: "Dort kannst du nicht hin gehen".to_string(),
+            };
+        } else {
+            let newpos = Pos {
+                i: self.pos.i - 1,
+                j: self.pos.j,
+            };
+            self.pos = newpos;
+        }
+    }
+
+    fn east(&mut self) {
+        if self.pos.i == self.cur_map[0].len() - 1
+            || self.get_map_block_type(Pos {
+                j: self.pos.j,
+                i: self.pos.i + 1,
+            }) == &MapBlockTypes::NotWalkable
+        {
+            self.info_message = InfoMessage {
+                title: "Error".to_string(),
+                message: "Dort kannst du nicht hin gehen".to_string(),
+            };
+        } else {
+            let newpos = Pos {
+                i: self.pos.i + 1,
+                j: self.pos.j,
+            };
+            self.pos = newpos;
         }
     }
 }

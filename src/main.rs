@@ -22,14 +22,20 @@ use tui::{
     Terminal,
 };
 
-mod map_gen;
 mod custom_layer;
 mod game;
+mod map_gen;
 use game::*;
 
 enum Event<I> {
     Input(I),
     Tick,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+enum MenuItem {
+    Game,
+    Help,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -60,6 +66,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     let stdout = io::stdout();
+    let mut active_menu_item = MenuItem::Game;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
     terminal.clear()?;
@@ -84,8 +91,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .border_type(BorderType::Plain),
                 );
 
-            rect.render_widget(render_home(&global_game), chunks[0]);
             rect.render_widget(info_widget, chunks[1]);
+            match active_menu_item {
+                MenuItem::Game => rect.render_widget(render_home(&global_game), chunks[0]),
+                MenuItem::Help => {
+                    rect.render_widget(render_help(), chunks[0]);
+                }
+            }
         })?;
 
         match rx.recv()? {
@@ -99,6 +111,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     global_game.north();
                     // println!("{:?}", visulize_map(game.cur_map.clone(), Some(&game.pos)));
                 }
+                KeyCode::Char('s') => {
+                    global_game.south();
+                }
+                KeyCode::Char('a') => {
+                    global_game.west();
+                }
+                KeyCode::Char('d') => {
+                    global_game.east();
+                }
+                KeyCode::Char('i') => {
+                    if active_menu_item == MenuItem::Game {
+                        active_menu_item = MenuItem::Help;
+                    } else {
+                        active_menu_item = MenuItem::Game;
+                    }
+                }
+                // KeyCode::Up => println!("up"),
+                // KeyCode::Left => println!("left"),
+                // KeyCode::Right => println!("right"),
                 // KeyCode::Down => println!("down"),
                 _ => {}
             },
@@ -112,6 +143,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn render_home<'a>(global_game: &'a Game) -> Paragraph<'a> {
     let map_str = map_gen::visulize_map(&global_game.cur_map, Some(&global_game.pos));
     return get_map_as_paragraph(map_str)
+        .alignment(Alignment::Center)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .style(Style::default().fg(Color::White))
+                // .title("Home")
+                .border_type(BorderType::Plain),
+        );
+}
+
+fn render_help<'a>() -> Paragraph<'a> {
+    return Paragraph::new(vec![
+        Spans::from(vec![Span::raw("Welcome")]),
+        Spans::from(vec![Span::raw("to")]),
+        Spans::from(vec![Span::styled(
+            "easy-dungean-scral",
+            Style::default().fg(Color::LightBlue),
+        )]),
+        Spans::from(vec![Span::raw("Simple rpg dungean scral Game.")]),
+    ])
     .alignment(Alignment::Center)
     .block(
         Block::default()
@@ -129,4 +180,3 @@ fn get_map_as_paragraph(map: String) -> Paragraph<'static> {
     }
     return Paragraph::new(map_spans);
 }
-
