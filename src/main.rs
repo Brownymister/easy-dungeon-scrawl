@@ -1,176 +1,145 @@
-use serde::Deserialize;
-use std::{
-    io::{stdin, stdout, Write},
-    process::exit,
+use chrono::prelude::*;
+use crossterm::{
+    event::{self, Event as CEvent, KeyCode},
+    terminal::{disable_raw_mode, enable_raw_mode},
+};
+use rand::{distributions::Alphanumeric, prelude::*};
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::io;
+use std::sync::mpsc;
+use std::thread;
+use std::time::{Duration, Instant};
+use thiserror::Error;
+use tui::{
+    backend::CrosstermBackend,
+    layout::{Alignment, Constraint, Direction, Layout},
+    style::{Color, Modifier, Style},
+    text::{Span, Spans},
+    widgets::{
+        Block, BorderType, Borders, Cell, List, ListItem, ListState, Paragraph, Row, Table, Tabs,
+    },
+    Terminal,
 };
 
-use crate::map_gen::visulize_map;
-
-mod custom_layer;
 mod map_gen;
+mod game;
+use game::*;
 
-fn main() {
-    println!("You stand at the mouth of a dark, damp cavern. The air is heavy with the smell of decay, and a chill runs down your spine. Do you dare enter the unknown depths, or retreat to the safety of the light?");
+enum Event<I> {
+    Input(I),
+    Tick,
+}
 
-    let game_settings_res = custom_layer::parse_game_settings("test.toml");
-    let game_settings;
-    match game_settings_res {
-        Ok(v) => game_settings = v,
-        Err(e) => {
-            println!("Error while parsing toml file: {:?}", e);
-            exit(0)
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    enable_raw_mode().expect("can run in raw mode");
+
+    let (tx, rx) = mpsc::channel();
+    let tick_rate = Duration::from_millis(200);
+    thread::spawn(move || {
+        let mut last_tick = Instant::now();
+        loop {
+            let timeout = tick_rate
+                .checked_sub(last_tick.elapsed())
+                .unwrap_or_else(|| Duration::from_secs(0));
+
+            if event::poll(timeout).expect("poll works") {
+                if let CEvent::Key(key) = event::read().expect("can read events") {
+                    tx.send(Event::Input(key)).expect("can send events");
+                }
+            }
+
+            if last_tick.elapsed() >= tick_rate {
+                if let Ok(_) = tx.send(Event::Tick) {
+                    last_tick = Instant::now();
+                }
+            }
         }
-    }
+    });
 
-    let maps: Vec<map_gen::Map> = game_settings
-        .maps
-        .iter()
-        .map(|map_str| map_gen::generate_map(map_str.to_string()))
-        .collect();
-
-    let mut game = Game {
-        playername: game_settings.player.name,
-        cur_map: maps[0].clone(),
-        health: game_settings.player.total_health,
-        global_items: game_settings.global_items,
-        inventory: vec![],
-        pos: Pos {
-            i: game_settings.start_pos[0],
-            j: game_settings.start_pos[1],
-        },
-        maps,
-    };
-    println!("{:?}", game);
+    let stdout = io::stdout();
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+    terminal.clear()?;
 
     loop {
-        let mut s = String::new();
+        terminal.draw(|rect| {
+            let size = rect.size();
+            let chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .margin(2)
+                .constraints([Constraint::Min(2), Constraint::Length(5)].as_ref())
+                .split(size);
 
-        let _ = stdout().flush();
-        stdin()
-            .read_line(&mut s)
-            .expect("Did not enter a correct string");
-        if let Some('\n') = s.chars().next_back() {
-            s.pop();
-        }
-        if let Some('\r') = s.chars().next_back() {
-            s.pop();
-        }
+            let copyright = Paragraph::new("pet-CLI 2020 - all rights reserved")
+                .style(Style::default().fg(Color::LightCyan))
+                .alignment(Alignment::Center)
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .style(Style::default().fg(Color::White))
+                        .title("Copyright")
+                        .border_type(BorderType::Plain),
+                );
 
-        println!("You typed: {}", s);
-        if s == "go north" || s == "w" {
-            game.north();
-        } else if s == "view map" {
-            println!("{:?}", visulize_map(game.cur_map.clone(), Some(&game.pos)));
-        } else {
-            println!("Invalid command");
-        }
-    }
-}
+            rect.render_widget(render_home(), chunks[0]);
+            rect.render_widget(copyright, chunks[1]);
+        })?;
 
-#[derive(Debug)]
-pub struct Game {
-    playername: String,
-    health: i32,
-    global_items: Vec<GameItem>,
-    inventory: Vec<InventoryElement>,
-    maps: Vec<map_gen::Map>,
-    cur_map: map_gen::Map,
-    pos: Pos,
-}
-
-#[derive(Debug)]
-pub struct Pos {
-    i: usize,
-    j: usize,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct GameItem {
-    pub item_id: String,
-    pub at: i32,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct Enemy {
-    name: String,
-    pos: (usize, usize),
-    health: i32,
-    weapon: String,
-}
-
-pub struct charakteristiks {
-    courage: i32,
-    Strength: i32,
-    Intelligence: i32,
-    Intuition: i32,
-}
-
-
-impl Movement for Game {
-    fn north(&mut self) {
-        let j = self.pos.j;
-        println!("{}", j);
-        println!(
-            "{:?}",
-            self.get_map_block_type(Pos {
-                i: self.pos.i,
-                j: j.clone() - 1
-            })
-        );
-        if j == 0
-            || self.get_map_block_type(Pos {
-                j: j.clone() - 1,
-                i: self.pos.i,
-            }) == &MapBlockTypes::NotWalkable
-        {
-            println!("Dort kannst du nich hin gehen.")
-        } else {
-            let newpos = Pos {
-                i: self.pos.i,
-                j: self.pos.j - 1,
-            };
-            self.pos = newpos;
-            println!("{:?}", visulize_map(self.cur_map.clone(), Some(&self.pos)));
+        match rx.recv()? {
+            Event::Input(event) => match event.code {
+                KeyCode::Char('q') => {
+                    disable_raw_mode()?;
+                    terminal.show_cursor()?;
+                    break;
+                }
+                KeyCode::Char('a') => {
+                    println!("a");
+                }
+                KeyCode::Char('d') => {
+                    // remove_pet_at_index(&mut pet_list_state).expect("can remove pet");
+                    println!("d");
+                }
+                KeyCode::Up => println!("up"),
+                KeyCode::Down => println!("down"),
+                _ => {}
+            },
+            Event::Tick => {}
         }
     }
+
+    Ok(())
 }
 
-impl Game {
-    fn get_map_block_type(&self, pos: Pos) -> &MapBlockTypes {
-        let row = &self.cur_map[pos.j];
-        println!("{:?}", row);
-        let map_block = &row[pos.i];
-        println!("{:?}", map_block);
-        return &map_block.block_type;
+fn render_home<'a>() -> Paragraph<'a> {
+    return get_map_as_paragraph(
+        "|x|1|1|x|x|x|x|x|x|x|
+|x|_|_|x|x|_|_|_|_|x|
+|x|_|_|x|x|_|_|_|_|x|
+|x|_|_|x|x|_|_|_|_|x|
+|x|_|_|x|x|x|_|_|x|x|
+|x|_|_|x|x|x|_|_|x|x|
+|x|_|_|_|_|_|_|_|x|x|
+|x|x|x|_|_|_|x|x|x|x|
+|x|x|x|x|_|_|x|x|x|x|
+|x|x|x|x|_|_|x|x|x|x|"
+            .to_string(),
+    )
+    .alignment(Alignment::Center)
+    .block(
+        Block::default()
+            .borders(Borders::ALL)
+            .style(Style::default().fg(Color::White))
+            // .title("Home")
+            .border_type(BorderType::Plain),
+    );
+}
+
+fn get_map_as_paragraph(map: String) -> Paragraph<'static> {
+    let mut map_spans = vec![];
+    for line in map.lines() {
+        map_spans.push(Spans::from(vec![Span::raw(line.to_string())]));
     }
+    return Paragraph::new(map_spans);
 }
 
-#[derive(Debug)]
-pub struct InventoryElement {
-    item: GameItem,
-    count: usize,
-}
-
-pub trait Movement {
-    fn north(&mut self) {}
-    fn south(&mut self) {}
-    fn west(&mut self) {}
-    fn east(&mut self) {}
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum MapBlockTypes {
-    Path,
-    NotWalkable,
-    Trap,
-    NewMapTrigger { map_id: String },
-    EnemyTrigger { enemy_id: String },
-    ItemTrigger { time_id: String },
-}
-
-#[derive(Debug, Clone)]
-pub struct MapBlock {
-    i: usize,
-    j: usize,
-    block_type: MapBlockTypes,
-}
