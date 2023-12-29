@@ -127,10 +127,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         active_menu_item = MenuItem::Game;
                     }
                 }
-                // KeyCode::Up => println!("up"),
-                // KeyCode::Left => println!("left"),
-                // KeyCode::Right => println!("right"),
-                // KeyCode::Down => println!("down"),
                 _ => {}
             },
             Event::Tick => {}
@@ -155,13 +151,29 @@ fn render_home<'a>(global_game: &'a Game) -> Paragraph<'a> {
 
 fn render_help<'a>() -> Paragraph<'a> {
     return Paragraph::new(vec![
-        Spans::from(vec![Span::raw("Welcome")]),
-        Spans::from(vec![Span::raw("to")]),
         Spans::from(vec![Span::styled(
-            "easy-dungean-scral",
-            Style::default().fg(Color::LightBlue),
+            "Welcome to",
+            Style::default().fg(Color::Red),
         )]),
-        Spans::from(vec![Span::raw("Simple rpg dungean scral Game.")]),
+        Spans::from(vec![Span::styled(
+            "Easy Dungeon Scrawl",
+            Style::default().fg(Color::Green),
+        )]),
+        Spans::from(vec![Span::styled(
+            "Simple rpg dungean scral Game.",
+            Style::default().fg(Color::Blue),
+        )]),
+        Spans::from(vec![Span::raw("")]),
+        Spans::from(vec![Span::styled(
+            "Controls",
+            Style::default().fg(Color::Yellow),
+        )]),
+        Spans::from(vec![Span::raw("w - move north")]),
+        Spans::from(vec![Span::raw("a - move west")]),
+        Spans::from(vec![Span::raw("s - move south")]),
+        Spans::from(vec![Span::raw("d - move east")]),
+        Spans::from(vec![Span::raw("i - toggle help")]),
+        Spans::from(vec![Span::raw("q - quit")]),
     ])
     .alignment(Alignment::Center)
     .block(
