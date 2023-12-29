@@ -23,6 +23,7 @@ use tui::{
 };
 
 mod map_gen;
+mod custom_layer;
 mod game;
 use game::*;
 
@@ -36,6 +37,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let (tx, rx) = mpsc::channel();
     let tick_rate = Duration::from_millis(200);
+    let mut global_game = Game::new();
     thread::spawn(move || {
         let mut last_tick = Instant::now();
         loop {
@@ -71,19 +73,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .constraints([Constraint::Min(2), Constraint::Length(5)].as_ref())
                 .split(size);
 
-            let copyright = Paragraph::new("pet-CLI 2020 - all rights reserved")
+            let info_widget = Paragraph::new(global_game.info_message.message.as_str())
                 .style(Style::default().fg(Color::LightCyan))
                 .alignment(Alignment::Center)
                 .block(
                     Block::default()
                         .borders(Borders::ALL)
                         .style(Style::default().fg(Color::White))
-                        .title("Copyright")
+                        .title(global_game.info_message.title.as_str())
                         .border_type(BorderType::Plain),
                 );
 
-            rect.render_widget(render_home(), chunks[0]);
-            rect.render_widget(copyright, chunks[1]);
+            rect.render_widget(render_home(&global_game), chunks[0]);
+            rect.render_widget(info_widget, chunks[1]);
         })?;
 
         match rx.recv()? {
@@ -93,15 +95,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     terminal.show_cursor()?;
                     break;
                 }
-                KeyCode::Char('a') => {
-                    println!("a");
+                KeyCode::Char('w') => {
+                    global_game.north();
+                    // println!("{:?}", visulize_map(game.cur_map.clone(), Some(&game.pos)));
                 }
-                KeyCode::Char('d') => {
-                    // remove_pet_at_index(&mut pet_list_state).expect("can remove pet");
-                    println!("d");
-                }
-                KeyCode::Up => println!("up"),
-                KeyCode::Down => println!("down"),
+                // KeyCode::Down => println!("down"),
                 _ => {}
             },
             Event::Tick => {}
@@ -111,20 +109,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn render_home<'a>() -> Paragraph<'a> {
-    return get_map_as_paragraph(
-        "|x|1|1|x|x|x|x|x|x|x|
-|x|_|_|x|x|_|_|_|_|x|
-|x|_|_|x|x|_|_|_|_|x|
-|x|_|_|x|x|_|_|_|_|x|
-|x|_|_|x|x|x|_|_|x|x|
-|x|_|_|x|x|x|_|_|x|x|
-|x|_|_|_|_|_|_|_|x|x|
-|x|x|x|_|_|_|x|x|x|x|
-|x|x|x|x|_|_|x|x|x|x|
-|x|x|x|x|_|_|x|x|x|x|"
-            .to_string(),
-    )
+fn render_home<'a>(global_game: &'a Game) -> Paragraph<'a> {
+    let map_str = map_gen::visulize_map(&global_game.cur_map, Some(&global_game.pos));
+    return get_map_as_paragraph(map_str)
     .alignment(Alignment::Center)
     .block(
         Block::default()

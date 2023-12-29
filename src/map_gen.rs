@@ -35,9 +35,8 @@ fn get_block_type(str: &str) -> MapBlockTypes {
     }
 }
 
-pub fn visulize_map(map: Map, player_pos: Option<&crate::Pos>) {
-    println!("{:?}", map);
-    println!("countertest str:");
+pub fn visulize_map(map: &Map, player_pos: Option<&crate::Pos>) -> String {
+    let mut map_str = "".to_string();
     for j in map {
         let mut row_str = "".to_string();
         for (i, item) in j.iter().enumerate() {
@@ -60,8 +59,9 @@ pub fn visulize_map(map: Map, player_pos: Option<&crate::Pos>) {
             row_str.push_str(&format!("|{}", get_symbol))
         }
         row_str.push_str("|");
-        println!("{}", row_str);
+        map_str.push_str(&format!("{}\n", row_str));
     }
+    return map_str;
 }
 
 #[cfg(test)]
@@ -79,7 +79,7 @@ mod tests {
     #[test]
     fn test_map_gen() {
         let map = generate_map(
-            "|x|x|x|x|x|x|x|x|x|x|
+            "|x|1|1|x|x|x|x|x|x|x|
 |x|_|_|x|x|_|_|_|_|x|
 |x|_|_|x|x|_|_|_|_|x|
 |x|_|_|x|x|_|_|_|_|x|
@@ -91,6 +91,6 @@ mod tests {
 |x|x|x|x|_|_|x|x|x|x|"
                 .to_string(),
         );
-        visulize_map(map, None)
+        println!("{:?}", visulize_map(&map, None));
     }
 }
