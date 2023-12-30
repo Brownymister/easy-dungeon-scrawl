@@ -32,36 +32,7 @@ pub fn parse_game_settings(file_name: &str) -> Result<GameSettings, toml::de::Er
 
 #[cfg(test)]
 mod tests {
-    use serde::Deserialize;
-
     use super::parse_game_settings;
-
-    #[derive(Deserialize, Debug)]
-    struct Person {
-        name: String,
-        age: u32,
-        test: Test,
-    }
-
-    #[derive(Deserialize, Debug)]
-    struct Test {
-        foo: String,
-        bar: i32,
-    }
-
-    #[test]
-    fn test_toml_serde() {
-        let toml = r#"
-name = "John Doe"
-age = 30
-
-[test]
-foo = "aoeu"
-bar = 234
-"#;
-        let person: Person = toml::de::from_str(toml).unwrap();
-        println!("person: {:?}", person)
-    }
 
     #[test]
     fn test_parse_game_settings() {

@@ -1,21 +1,16 @@
-use chrono::prelude::*;
 use crossterm::{
     event::{self, Event as CEvent, KeyCode},
     terminal::{disable_raw_mode, enable_raw_mode},
 };
-use rand::{distributions::Alphanumeric, prelude::*};
-use serde::{Deserialize, Serialize};
 use std::io;
 use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::{alloc::System, fs};
-use thiserror::Error;
 use tui::{
     backend::CrosstermBackend,
     layout::{Alignment, Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
+    style::{Color, Style},
     text::{Span, Spans},
     widgets::{
         Block, BorderType, Borders, Cell, List, ListItem, ListState, Paragraph, Row, Table, Tabs,
@@ -129,7 +124,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 KeyCode::Down => global_game.south(),
                 KeyCode::Char('d') => global_game.east(),
                 KeyCode::Right => global_game.east(),
-                KeyCode::Char('i') => {
+                KeyCode::Char('h') => {
                     if active_menu_item == MenuItem::Game {
                         active_menu_item = MenuItem::Help;
                     } else {

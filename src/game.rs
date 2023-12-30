@@ -1,5 +1,4 @@
 use crate::map_gen;
-use crate::map_gen::visulize_map;
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -150,9 +149,7 @@ impl Movement for Game {
 impl Game {
     fn get_map_block_type(&self, pos: Pos) -> &MapBlockTypes {
         let row = &self.cur_map[pos.j];
-        // println!("{:?}", row);
         let map_block = &row[pos.i];
-        // println!("{:?}", map_block);
         return &map_block.block_type;
     }
 
@@ -212,7 +209,7 @@ pub enum MapBlockTypes {
     Trap,
     NewMapTrigger { map_id: String },
     EnemyTrigger { enemy_id: String },
-    ItemTrigger { time_id: String },
+    ItemTrigger { itme_id: String },
 }
 
 #[derive(Debug, Clone)]

@@ -21,16 +21,25 @@ pub fn generate_map(map_str: String) -> Map {
 }
 
 fn get_block_type(str: &str) -> MapBlockTypes {
-    let re = regex::Regex::new("^[1-9]*$").unwrap();
-    let caps = re.captures(str);
-    if caps.is_some() {
+    let new_maps_trigger_re = regex::Regex::new(r"M(\d+)").unwrap();
+    let new_maps_trigger_caps = new_maps_trigger_re.captures(str);
+    if new_maps_trigger_caps.is_some() {
         return MapBlockTypes::NewMapTrigger {
-            map_id: (&caps.unwrap()[0]).to_string(),
+            map_id: (&new_maps_trigger_caps.unwrap().get(1).unwrap().as_str()).to_string(),
+        };
+    }
+
+    let item_trigger_re = regex::Regex::new(r"I(\d+)").unwrap();
+    let item_trigger_caps = item_trigger_re.captures(str);
+    if item_trigger_caps.is_some() {
+        return MapBlockTypes::NewMapTrigger {
+            map_id: (&item_trigger_caps.unwrap().get(1).unwrap().as_str()).to_string(),
         };
     }
     match str {
         "x" => MapBlockTypes::NotWalkable,
         "_" => MapBlockTypes::Path,
+        "T" => MapBlockTypes::Trap,
         _ => MapBlockTypes::NotWalkable,
     }
 }
@@ -46,7 +55,7 @@ pub fn visulize_map(map: &Map, player_pos: Option<&crate::Pos>) -> String {
                 MapBlockTypes::NotWalkable => "x",
                 MapBlockTypes::NewMapTrigger { map_id } => map_id.as_str(),
                 MapBlockTypes::EnemyTrigger { enemy_id } => enemy_id.as_str(),
-                MapBlockTypes::ItemTrigger { time_id } => time_id.as_str(),
+                MapBlockTypes::ItemTrigger { itme_id } => itme_id.as_str(),
                 // MapBlockTypes::Trap => "",
                 _ => " ",
             };
@@ -70,10 +79,9 @@ mod tests {
 
     #[test]
     fn test_get_block_types() {
-        let b = get_block_type("1");
-        let re = regex::Regex::new("^[0-9]*$").unwrap();
-        let caps = re.captures("1").unwrap();
-        println!("get_block_type {:?}", (&caps[0]).parse::<usize>().unwrap());
+        let b = get_block_type("M1");
+        println!("get_block_type {:?}", b);
+        assert_eq!(b, crate::MapBlockTypes::NewMapTrigger { map_id: "1".to_string() });
     }
 
     #[test]
