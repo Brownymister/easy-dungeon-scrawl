@@ -1,6 +1,7 @@
 use crate::map_gen;
 use crate::map_gen::visulize_map;
 use serde::{Deserialize, Serialize};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug)]
 pub struct Game {
@@ -18,6 +19,22 @@ pub struct Game {
 pub struct InfoMessage {
     pub title: String,
     pub message: String,
+    pub time: u128,
+}
+
+impl InfoMessage {
+    pub fn new(title: String, message: String) -> InfoMessage {
+        let start = SystemTime::now();
+        let time = start
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_millis();
+        return InfoMessage {
+            title,
+            message,
+            time,
+        };
+    }
 }
 
 #[derive(Debug)]
@@ -56,10 +73,10 @@ impl Movement for Game {
                 i: self.pos.i,
             }) == &MapBlockTypes::NotWalkable
         {
-            self.info_message = InfoMessage {
-                title: "Error".to_string(),
-                message: "Dort kannst du nicht hin gehen".to_string(),
-            };
+            self.info_message = InfoMessage::new(
+                "Error".to_string(),
+                "Dort kannst du nicht hin gehen".to_string(),
+            );
         } else {
             let newpos = Pos {
                 i: self.pos.i,
@@ -76,10 +93,10 @@ impl Movement for Game {
                 i: self.pos.i,
             }) == &MapBlockTypes::NotWalkable
         {
-            self.info_message = InfoMessage {
-                title: "Error".to_string(),
-                message: "Dort kannst du nicht hin gehen".to_string(),
-            };
+            self.info_message = InfoMessage::new(
+                "Error".to_string(),
+                "Dort kannst du nicht hin gehen".to_string(),
+            );
         } else {
             let newpos = Pos {
                 i: self.pos.i,
@@ -96,10 +113,10 @@ impl Movement for Game {
                 i: self.pos.i - 1,
             }) == &MapBlockTypes::NotWalkable
         {
-            self.info_message = InfoMessage {
-                title: "Error".to_string(),
-                message: "Dort kannst du nicht hin gehen".to_string(),
-            };
+            self.info_message = InfoMessage::new(
+                "Error".to_string(),
+                "Dort kannst du nicht hin gehen".to_string(),
+            );
         } else {
             let newpos = Pos {
                 i: self.pos.i - 1,
@@ -116,10 +133,10 @@ impl Movement for Game {
                 i: self.pos.i + 1,
             }) == &MapBlockTypes::NotWalkable
         {
-            self.info_message = InfoMessage {
-                title: "Error".to_string(),
-                message: "Dort kannst du nicht hin gehen".to_string(),
-            };
+            self.info_message = InfoMessage::new(
+                "Error".to_string(),
+                "Dort kannst du nicht hin gehen".to_string(),
+            );
         } else {
             let newpos = Pos {
                 i: self.pos.i + 1,
@@ -168,6 +185,7 @@ impl Game {
             info_message: InfoMessage {
                 title: "".to_string(),
                 message: "".to_string(),
+                time: 0,
             },
             maps,
         };

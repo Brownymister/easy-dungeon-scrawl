@@ -5,11 +5,12 @@ use crossterm::{
 };
 use rand::{distributions::Alphanumeric, prelude::*};
 use serde::{Deserialize, Serialize};
-use std::fs;
 use std::io;
 use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
+use std::time::{SystemTime, UNIX_EPOCH};
+use std::{alloc::System, fs};
 use thiserror::Error;
 use tui::{
     backend::CrosstermBackend,
@@ -80,6 +81,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .constraints([Constraint::Min(2), Constraint::Length(5)].as_ref())
                 .split(size);
 
+            let start = SystemTime::now();
+            let time = start
+                .duration_since(UNIX_EPOCH)
+                .expect("Time went backwards")
+                .as_millis();
+            if time - global_game.info_message.time > 1000 && global_game.info_message.time != 0 {
+                global_game.info_message = InfoMessage {
+                    title: "".to_string(),
+                    message: "".to_string(),
+                    time: 0,
+                }
+            }
+
             let info_widget = Paragraph::new(global_game.info_message.message.as_str())
                 .style(Style::default().fg(Color::LightCyan))
                 .alignment(Alignment::Center)
@@ -107,19 +121,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     terminal.show_cursor()?;
                     break;
                 }
-                KeyCode::Char('w') => {
-                    global_game.north();
-                    // println!("{:?}", visulize_map(game.cur_map.clone(), Some(&game.pos)));
-                }
-                KeyCode::Char('s') => {
-                    global_game.south();
-                }
-                KeyCode::Char('a') => {
-                    global_game.west();
-                }
-                KeyCode::Char('d') => {
-                    global_game.east();
-                }
+                KeyCode::Char('w') => global_game.north(),
+                KeyCode::Up => global_game.north(),
+                KeyCode::Char('a') => global_game.west(),
+                KeyCode::Left => global_game.west(),
+                KeyCode::Char('s') => global_game.south(),
+                KeyCode::Down => global_game.south(),
+                KeyCode::Char('d') => global_game.east(),
+                KeyCode::Right => global_game.east(),
                 KeyCode::Char('i') => {
                     if active_menu_item == MenuItem::Game {
                         active_menu_item = MenuItem::Help;
