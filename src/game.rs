@@ -48,9 +48,12 @@ impl InfoQueue {
     }
 
     pub fn queue(&mut self, title: String, message: String) {
-        let info = InfoMessage::new(title, message);
-        self.queue.push_back(info);
-        log::info!("{:?}", self.queue);
+        let head = self.head();
+        if !(head.is_some() && head.unwrap().title == title && head.unwrap().message == message) {
+            let info = InfoMessage::new(title, message);
+            self.queue.push_back(info);
+            log::info!("{:?}", self.queue);
+        }
     }
 
     pub fn dequeue(&mut self) {
