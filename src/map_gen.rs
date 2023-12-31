@@ -1,4 +1,4 @@
-use crate::{MapBlock, MapBlockTypes};
+use crate::MapBlockTypes;
 
 pub type Map = Vec<Vec<MapBlockTypes>>;
 

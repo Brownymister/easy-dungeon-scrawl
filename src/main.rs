@@ -1,7 +1,12 @@
+use chrono::Local;
 use crossterm::{
     event::{self, Event as CEvent, KeyCode},
     terminal::{disable_raw_mode, enable_raw_mode},
 };
+use log::LevelFilter;
+use log4rs::append::file::FileAppender;
+use log4rs::config::{Appender, Config, Root};
+use log4rs::encode::pattern::PatternEncoder;
 use std::io;
 use std::sync::mpsc;
 use std::thread;
@@ -35,10 +40,20 @@ enum MenuItem {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let logfile = FileAppender::builder()
+        .encoder(Box::new(PatternEncoder::new("{l} - {m}\n")))
+        .build("output.log")?;
+
+    let config = Config::builder()
+        .appender(Appender::builder().build("logfile", Box::new(logfile)))
+        .build(Root::builder().appender("logfile").build(LevelFilter::Info))?;
+
+    log4rs::init_config(config)?;
+
     enable_raw_mode().expect("can run in raw mode");
 
     let (tx, rx) = mpsc::channel();
-    let tick_rate = Duration::from_millis(200);
+    let tick_rate = Duration::from_millis(100);
     let mut global_game = Game::new();
     thread::spawn(move || {
         let mut last_tick = Instant::now();
@@ -76,29 +91,52 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .constraints([Constraint::Min(2), Constraint::Length(5)].as_ref())
                 .split(size);
 
-            let start = SystemTime::now();
-            let time = start
-                .duration_since(UNIX_EPOCH)
-                .expect("Time went backwards")
-                .as_millis();
-            if time - global_game.info_message.time > 1000 && global_game.info_message.time != 0 {
-                global_game.info_message = InfoMessage {
-                    title: "".to_string(),
-                    message: "".to_string(),
-                    time: 0,
-                }
+            // let start = SystemTime::now();
+            // let time = start
+            //     .duration_since(UNIX_EPOCH)
+            //     .expect("Time went backwards")
+            //     .as_millis();
+            //
+            log::info!("head here {:?}", global_game.info_queue.head());
+
+            if global_game.info_queue.head().is_some() && global_game.info_queue.timer <= 0
+            // && time - global_game.info_queue.head().unwrap().time > 1000
+            {
+                global_game.info_queue.dequeue();
+            } else if global_game.info_queue.head().is_some() {
+                global_game.info_queue.timer -= 1;
             }
 
-            let info_widget = Paragraph::new(global_game.info_message.message.as_str())
-                .style(Style::default().fg(Color::LightCyan))
-                .alignment(Alignment::Center)
-                .block(
-                    Block::default()
-                        .borders(Borders::ALL)
-                        .style(Style::default().fg(Color::White))
-                        .title(global_game.info_message.title.as_str())
-                        .border_type(BorderType::Plain),
-                );
+            let binding = InfoMessage {
+                title: "".to_string(),
+                message: "".to_string(),
+                // time: 0,
+            };
+
+            let info_widget = Paragraph::new(
+                global_game
+                    .info_queue
+                    .head()
+                    .unwrap_or(&binding)
+                    .message
+                    .as_str(),
+            )
+            .style(Style::default().fg(Color::LightCyan))
+            .alignment(Alignment::Center)
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .style(Style::default().fg(Color::White))
+                    .title(
+                        global_game
+                            .info_queue
+                            .head()
+                            .unwrap_or(&binding)
+                            .title
+                            .as_str(),
+                    )
+                    .border_type(BorderType::Plain),
+            );
 
             rect.render_widget(info_widget, chunks[1]);
             match active_menu_item {

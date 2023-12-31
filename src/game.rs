@@ -1,5 +1,6 @@
 use crate::map_gen;
 use serde::{Deserialize, Serialize};
+use std::collections::VecDeque;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug)]
@@ -11,28 +12,54 @@ pub struct Game {
     pub maps: Vec<map_gen::Map>,
     pub cur_map: map_gen::Map,
     pub pos: Pos,
-    pub info_message: InfoMessage,
+    pub info_queue: InfoQueue,
 }
 
 #[derive(Debug)]
 pub struct InfoMessage {
     pub title: String,
     pub message: String,
-    pub time: u128,
+    // pub time: u128,
 }
 
 impl InfoMessage {
-    pub fn new(title: String, message: String) -> InfoMessage {
-        let start = SystemTime::now();
-        let time = start
-            .duration_since(UNIX_EPOCH)
-            .expect("Time went backwards")
-            .as_millis();
+    fn new(title: String, message: String) -> InfoMessage {
+        let time = 0;
         return InfoMessage {
             title,
             message,
-            time,
+            // time,
         };
+    }
+}
+
+#[derive(Debug)]
+pub struct InfoQueue {
+    pub queue: VecDeque<InfoMessage>,
+    pub timer: usize,
+}
+
+impl InfoQueue {
+    pub fn new() -> InfoQueue {
+        return InfoQueue {
+            queue: VecDeque::new(),
+            timer: 30,
+        };
+    }
+
+    pub fn queue(&mut self, title: String, message: String) {
+        let info = InfoMessage::new(title, message);
+        self.queue.push_back(info);
+        log::info!("{:?}", self.queue);
+    }
+
+    pub fn dequeue(&mut self) {
+        self.timer = 30;
+        self.queue.pop_front();
+    }
+
+    pub fn head(&self) -> Option<&InfoMessage> {
+        self.queue.front()
     }
 }
 
@@ -56,12 +83,12 @@ pub struct Enemy {
     pub weapon: String,
 }
 
-pub struct charakteristiks {
-    pub courage: i32,
-    pub Strength: i32,
-    pub Intelligence: i32,
-    pub Intuition: i32,
-}
+// pub struct charakteristiks {
+//     pub courage: i32,
+//     pub Strength: i32,
+//     pub Intelligence: i32,
+//     pub Intuition: i32,
+// }
 
 impl Movement for Game {
     fn north(&mut self) {
@@ -72,14 +99,13 @@ impl Movement for Game {
                 i: self.pos.i,
             }) == &MapBlockTypes::NotWalkable
         {
-            self.info_message = InfoMessage::new(
+            self.info_queue.queue(
                 "Error".to_string(),
                 "Dort kannst du nicht hin gehen".to_string(),
             );
         } else if let &MapBlockTypes::NewMapTrigger(new_map_id) =
             self.get_map_block_type(self.pos.clone())
         {
-            self.info_message = InfoMessage::new("Debug".to_string(), new_map_id.to_string());
             self.cur_map = self.maps[new_map_id as usize].clone();
             let newpos = Pos {
                 i: self.pos.i,
@@ -102,7 +128,7 @@ impl Movement for Game {
                 i: self.pos.i,
             }) == &MapBlockTypes::NotWalkable
         {
-            self.info_message = InfoMessage::new(
+            self.info_queue.queue(
                 "Error".to_string(),
                 "Dort kannst du nicht hin gehen".to_string(),
             );
@@ -122,7 +148,7 @@ impl Movement for Game {
                 i: self.pos.i - 1,
             }) == &MapBlockTypes::NotWalkable
         {
-            self.info_message = InfoMessage::new(
+            self.info_queue.queue(
                 "Error".to_string(),
                 "Dort kannst du nicht hin gehen".to_string(),
             );
@@ -142,7 +168,7 @@ impl Movement for Game {
                 i: self.pos.i + 1,
             }) == &MapBlockTypes::NotWalkable
         {
-            self.info_message = InfoMessage::new(
+            self.info_queue.queue(
                 "Error".to_string(),
                 "Dort kannst du nicht hin gehen".to_string(),
             );
@@ -190,11 +216,7 @@ impl Game {
                 i: game_settings.start_pos[0],
                 j: game_settings.start_pos[1],
             },
-            info_message: InfoMessage {
-                title: "".to_string(),
-                message: "".to_string(),
-                time: 0,
-            },
+            info_queue: InfoQueue::new(),
             maps,
         };
     }
@@ -221,11 +243,4 @@ pub enum MapBlockTypes {
     NewMapTrigger(usize),
     EnemyTrigger(usize),
     ItemTrigger(usize),
-}
-
-#[derive(Debug, Clone)]
-pub struct MapBlock {
-    pub i: usize,
-    pub j: usize,
-    pub block_type: MapBlockTypes,
 }
