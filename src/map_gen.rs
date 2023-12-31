@@ -1,20 +1,16 @@
 use crate::{MapBlock, MapBlockTypes};
 
-pub type Map = Vec<Vec<MapBlock>>;
+pub type Map = Vec<Vec<MapBlockTypes>>;
 
 pub fn generate_map(map_str: String) -> Map {
     let mut map = vec![];
 
-    for (j, row_str) in map_str.split("\n").enumerate() {
-        let mut row: Vec<MapBlock> = vec![];
-
-        for (i, item) in row_str.split("|").filter(|x| x != &"").enumerate() {
-            row.push(MapBlock {
-                i: i.try_into().unwrap(),
-                j: j.try_into().unwrap(),
-                block_type: get_block_type(item),
-            });
+    for (_, row_str) in map_str.lines().collect::<Vec<&str>>().iter().enumerate() {
+        let mut row: Vec<MapBlockTypes> = vec![];
+        for (_, item) in row_str.split("|").filter(|x| x != &"").enumerate() {
+            row.push(get_block_type(item))
         }
+        println!("row str {} {:?}", row_str, row);
         map.push(row);
     }
     return map;
@@ -24,17 +20,31 @@ fn get_block_type(str: &str) -> MapBlockTypes {
     let new_maps_trigger_re = regex::Regex::new(r"M(\d+)").unwrap();
     let new_maps_trigger_caps = new_maps_trigger_re.captures(str);
     if new_maps_trigger_caps.is_some() {
-        return MapBlockTypes::NewMapTrigger {
-            map_id: (&new_maps_trigger_caps.unwrap().get(1).unwrap().as_str()).to_string(),
-        };
+        return MapBlockTypes::NewMapTrigger(
+            new_maps_trigger_caps
+                .unwrap()
+                .get(1)
+                .unwrap()
+                .as_str()
+                .to_string()
+                .parse()
+                .unwrap(),
+        );
     }
 
     let item_trigger_re = regex::Regex::new(r"I(\d+)").unwrap();
     let item_trigger_caps = item_trigger_re.captures(str);
     if item_trigger_caps.is_some() {
-        return MapBlockTypes::NewMapTrigger {
-            map_id: (&item_trigger_caps.unwrap().get(1).unwrap().as_str()).to_string(),
-        };
+        return MapBlockTypes::ItemTrigger(
+            item_trigger_caps
+                .unwrap()
+                .get(1)
+                .unwrap()
+                .as_str()
+                .to_string()
+                .parse()
+                .unwrap(),
+        );
     }
     match str {
         "x" => MapBlockTypes::NotWalkable,
@@ -46,23 +56,15 @@ fn get_block_type(str: &str) -> MapBlockTypes {
 
 pub fn visulize_map(map: &Map, player_pos: Option<&crate::Pos>) -> String {
     let mut map_str = "".to_string();
-    for j in map {
+    for (j, row) in map.iter().enumerate() {
         let mut row_str = "".to_string();
-        for (i, item) in j.iter().enumerate() {
-            assert_eq!(i, item.i);
-            let mut get_symbol = match &item.block_type {
+        for (i, item) in row.iter().enumerate() {
+            let mut get_symbol = match &item {
                 MapBlockTypes::Path => "_",
                 MapBlockTypes::NotWalkable => "x",
-                MapBlockTypes::NewMapTrigger { map_id } => map_id.as_str(),
-                MapBlockTypes::EnemyTrigger { enemy_id } => enemy_id.as_str(),
-                MapBlockTypes::ItemTrigger { itme_id } => itme_id.as_str(),
-                // MapBlockTypes::Trap => "",
-                _ => " ",
+                _ => "_",
             };
-            if player_pos.is_some()
-                && item.j == player_pos.unwrap().j
-                && item.i == player_pos.unwrap().i
-            {
+            if player_pos.is_some() && j == player_pos.unwrap().j && i == player_pos.unwrap().i {
                 get_symbol = "P";
             }
             row_str.push_str(&format!("|{}", get_symbol))
@@ -81,15 +83,15 @@ mod tests {
     fn test_get_block_types() {
         let b = get_block_type("M1");
         println!("get_block_type {:?}", b);
-        assert_eq!(b, crate::MapBlockTypes::NewMapTrigger { map_id: "1".to_string() });
+        assert_eq!(b, crate::MapBlockTypes::NewMapTrigger(1));
     }
 
     #[test]
     fn test_map_gen() {
         let map = generate_map(
-            "|x|1|1|x|x|x|x|x|x|x|
+            " |x|M1|M1|x|x|x|x|x|x|x|
 |x|_|_|x|x|_|_|_|_|x|
-|x|_|_|x|x|_|_|_|_|x|
+|x|_|_|x|x|_|IO|_|_|x|
 |x|_|_|x|x|_|_|_|_|x|
 |x|_|_|x|x|x|_|_|x|x|
 |x|_|_|x|x|x|_|_|x|x|
@@ -99,6 +101,26 @@ mod tests {
 |x|x|x|x|_|_|x|x|x|x|"
                 .to_string(),
         );
-        println!("{:?}", visulize_map(&map, None));
+        println!("{:?}", map);
+        visulize_map(&map, None)
+            .lines()
+            .collect::<Vec<&str>>()
+            .iter()
+            .rev()
+            .for_each(|x| println!("{}", x));
+        assert_eq!(
+            visulize_map(&map, None),
+            " |x|_|_|x|x|x|x|x|x|x|
+|x|_|_|x|x|_|_|_|_|x|
+|x|_|_|x|x|_|_|_|_|x|
+|x|_|_|x|x|_|_|_|_|x|
+|x|_|_|x|x|x|_|_|x|x|
+|x|_|_|x|x|x|_|_|x|x|
+|x|_|_|_|_|_|_|_|x|x|
+|x|x|x|_|_|_|x|x|x|x|
+|x|x|x|x|_|_|x|x|x|x|
+|x|x|x|x|_|_|x|x|x|x|"
+                .to_string()
+        )
     }
 }

@@ -148,7 +148,7 @@ fn render_home<'a>(global_game: &'a Game) -> Paragraph<'a> {
             Block::default()
                 .borders(Borders::ALL)
                 .style(Style::default().fg(Color::White))
-                // .title("Home")
+                .title(global_game.playername.as_str())
                 .border_type(BorderType::Plain),
         );
 }
@@ -176,7 +176,7 @@ fn render_help<'a>() -> Paragraph<'a> {
         Spans::from(vec![Span::raw("a - move west")]),
         Spans::from(vec![Span::raw("s - move south")]),
         Spans::from(vec![Span::raw("d - move east")]),
-        Spans::from(vec![Span::raw("i - toggle help")]),
+        Spans::from(vec![Span::raw("h - toggle help")]),
         Spans::from(vec![Span::raw("q - quit")]),
     ])
     .alignment(Alignment::Center)

@@ -1,7 +1,7 @@
 maps = ["""
-|x|1|1|x|x|x|x|x|x|x|
+|x|M1|M1|x|x|x|x|x|x|x|
 |x|_|_|x|x|_|_|_|_|x|
-|x|_|_|x|x|_|_|_|_|x|
+|x|_|_|x|x|_|IO|_|_|x|
 |x|_|_|x|x|_|_|_|_|x|
 |x|_|_|x|x|x|_|_|x|x|
 |x|_|_|x|x|x|_|_|x|x|
@@ -19,7 +19,7 @@ maps = ["""
 |x|x|x|x|x|x|x|x|x|x|
 |x|x|x|x|x|x|x|x|x|x|
 |x|_|_|x|x|x|x|x|x|x|
-|x|0|0|x|x|x|x|x|x|x|
+|x|M0|M0|x|x|x|x|x|x|x|
 """
 ]
 

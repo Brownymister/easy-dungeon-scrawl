@@ -36,7 +36,7 @@ impl InfoMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Pos {
     pub i: usize,
     pub j: usize,
@@ -76,6 +76,16 @@ impl Movement for Game {
                 "Error".to_string(),
                 "Dort kannst du nicht hin gehen".to_string(),
             );
+        } else if let &MapBlockTypes::NewMapTrigger(new_map_id) =
+            self.get_map_block_type(self.pos.clone())
+        {
+            self.info_message = InfoMessage::new("Debug".to_string(), new_map_id.to_string());
+            self.cur_map = self.maps[new_map_id as usize].clone();
+            let newpos = Pos {
+                i: self.pos.i,
+                j: self.cur_map.len() - 1,
+            };
+            self.pos = newpos;
         } else {
             let newpos = Pos {
                 i: self.pos.i,
@@ -150,7 +160,7 @@ impl Game {
     fn get_map_block_type(&self, pos: Pos) -> &MapBlockTypes {
         let row = &self.cur_map[pos.j];
         let map_block = &row[pos.i];
-        return &map_block.block_type;
+        return &map_block;
     }
 
     pub fn new() -> Game {
@@ -169,6 +179,7 @@ impl Game {
             .iter()
             .map(|map_str| map_gen::generate_map(map_str.to_string()))
             .collect();
+
         return Game {
             playername: game_settings.player.name,
             cur_map: maps[0].clone(),
@@ -207,9 +218,9 @@ pub enum MapBlockTypes {
     Path,
     NotWalkable,
     Trap,
-    NewMapTrigger { map_id: String },
-    EnemyTrigger { enemy_id: String },
-    ItemTrigger { itme_id: String },
+    NewMapTrigger(usize),
+    EnemyTrigger(usize),
+    ItemTrigger(usize),
 }
 
 #[derive(Debug, Clone)]
