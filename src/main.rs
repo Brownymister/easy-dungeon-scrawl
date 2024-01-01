@@ -91,17 +91,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .constraints([Constraint::Min(2), Constraint::Length(5)].as_ref())
                 .split(size);
 
-            // let start = SystemTime::now();
-            // let time = start
-            //     .duration_since(UNIX_EPOCH)
-            //     .expect("Time went backwards")
-            //     .as_millis();
-            //
             log::info!("head here {:?}", global_game.info_queue.head());
 
-            if global_game.info_queue.head().is_some() && global_game.info_queue.timer <= 0
-            // && time - global_game.info_queue.head().unwrap().time > 1000
-            {
+            if global_game.info_queue.head().is_some() && global_game.info_queue.timer <= 0 {
                 global_game.info_queue.dequeue();
             } else if global_game.info_queue.head().is_some() {
                 global_game.info_queue.timer -= 1;
@@ -110,7 +102,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let binding = InfoMessage {
                 title: "".to_string(),
                 message: "".to_string(),
-                // time: 0,
             };
 
             let info_widget = Paragraph::new(

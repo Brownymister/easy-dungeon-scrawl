@@ -23,10 +23,7 @@ pub struct InfoMessage {
 
 impl InfoMessage {
     fn new(title: String, message: String) -> InfoMessage {
-        return InfoMessage {
-            title,
-            message,
-        };
+        return InfoMessage { title, message };
     }
 }
 
@@ -90,29 +87,77 @@ pub struct Enemy {
 //     pub Intuition: i32,
 // }
 
+fn cur_block_is_new_map_block(map_block: &MapBlockTypes) -> Option<usize> {
+    if let &MapBlockTypes::NewMapTrigger(new_map_id) = map_block {
+        Some(new_map_id)
+    } else {
+        None
+    }
+}
+
 impl Movement for Game {
     fn north(&mut self) {
         let j = self.pos.j;
-        if j == 0
-            || self.get_map_block_type(Pos {
-                j: j.clone() - 1,
-                i: self.pos.i,
-            }) == &MapBlockTypes::NotWalkable
-        {
-            self.info_queue.queue(
-                "Error".to_string(),
-                "Dort kannst du nicht hin gehen".to_string(),
-            );
-        } else if let &MapBlockTypes::NewMapTrigger(new_map_id) =
-            self.get_map_block_type(self.pos.clone())
-        {
-            self.cur_map = self.maps[new_map_id as usize].clone();
+        self.info_queue.queue(
+            "Debug".to_string(),
+            format!(
+                "j: {}, i: {}, mbt: {:?}",
+                j,
+                self.pos.i,
+                self.get_map_block_type(self.pos.clone())
+            ),
+        );
+        // if j == 0
+        //     && !(if let &MapBlockTypes::NewMapTrigger(_) = self.get_map_block_type(self.pos.clone())
+        //     {
+        //         true
+        //     } else {
+        //         false
+        //     })
+        //     || j != 0
+        //         && self.get_map_block_type(Pos {
+        //             j: j.clone() - 1,
+        //             i: self.pos.i,
+        //         }) == &MapBlockTypes::NotWalkable
+        // {
+        //     self.info_queue.queue(
+        //         "Error".to_string(),
+        //         "Dort kannst du nicht hin gehen".to_string(),
+        //     );
+        // } else if let &MapBlockTypes::NewMapTrigger(new_map_id) =
+        //     self.get_map_block_type(self.pos.clone())
+        // {
+        //     if j == 0 {
+        //         self.cur_map = self.maps[new_map_id as usize].clone();
+        //         let newpos = Pos {
+        //             i: self.pos.i,
+        //             j: self.cur_map.len() - 1,
+        //         };
+        //         self.pos = newpos;
+        //     }
+        // } else {
+        //     let newpos = Pos {
+        //         i: self.pos.i,
+        //         j: self.pos.j - 1,
+        //     };
+        //     self.pos = newpos;
+        // }
+        let map_block = cur_block_is_new_map_block(self.get_map_block_type(self.pos.clone()));
+        if j == 0 && map_block.is_some() {
+            self.cur_map = self.maps[map_block.unwrap() as usize].clone();
             let newpos = Pos {
                 i: self.pos.i,
                 j: self.cur_map.len() - 1,
             };
             self.pos = newpos;
-        } else {
+            return;
+        }
+        if j != 0
+            && self.get_map_block_type(Pos {
+                j: j.clone() - 1,
+                i: self.pos.i,
+            }) != &MapBlockTypes::NotWalkable
+        {
             let newpos = Pos {
                 i: self.pos.i,
                 j: self.pos.j - 1,
