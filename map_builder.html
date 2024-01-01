@@ -1,0 +1,50 @@
+<body>
+    <input id="width" type="number" value="10" onchange="BuildTable()" />
+    <input id="height" type="number" value="10" onchange="BuildTable()" />
+
+    <table id="map"></table>
+    <button type="button" onclick="parse_table()">parse_table</button>
+    <p id="output"></p>
+    <script>
+        function BuildTable() {
+            let max_i = document.getElementById("width").value;
+            let max_j = document.getElementById("height").value;
+
+            let table = document.getElementById("map");
+            table.innerHTML = "";
+            for (let i = 0; i < max_i; i++) {
+                let row = document.createElement("tr");
+                for (let j = 0; j < max_j; j++) {
+                    let cell = document.createElement("td");
+                    let check_box = document.createElement("input");
+                    check_box.type = "checkbox";
+                    cell.appendChild(check_box);
+                    row.appendChild(cell);
+                }
+                table.appendChild(row);
+            }
+        }
+        BuildTable();
+
+        function parse_table() {
+            let table = document.getElementById("map");
+            let rows = table.rows;
+            let map = "";
+            for (let i = 0; i < rows.length; i++) {
+                let cells = rows[i].cells;
+                let row = "|";
+                for (let j = 0; j < cells.length; j++) {
+                    let cell = cells[j];
+                    let check_box = cell.firstChild;
+                    if (check_box.checked) {
+                        row += "x|";
+                    } else {
+                        row += "_|";
+                    }
+                }
+                map += row + "<br/>";
+            }
+            document.getElementById("output").innerHTML = map;
+        }
+    </script>
+</body>
