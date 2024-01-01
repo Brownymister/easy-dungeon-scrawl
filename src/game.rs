@@ -18,7 +18,6 @@ pub struct Game {
 pub struct InfoMessage {
     pub title: String,
     pub message: String,
-    // pub time: u128,
 }
 
 impl InfoMessage {
@@ -107,41 +106,6 @@ impl Movement for Game {
                 self.get_map_block_type(self.pos.clone())
             ),
         );
-        // if j == 0
-        //     && !(if let &MapBlockTypes::NewMapTrigger(_) = self.get_map_block_type(self.pos.clone())
-        //     {
-        //         true
-        //     } else {
-        //         false
-        //     })
-        //     || j != 0
-        //         && self.get_map_block_type(Pos {
-        //             j: j.clone() - 1,
-        //             i: self.pos.i,
-        //         }) == &MapBlockTypes::NotWalkable
-        // {
-        //     self.info_queue.queue(
-        //         "Error".to_string(),
-        //         "Dort kannst du nicht hin gehen".to_string(),
-        //     );
-        // } else if let &MapBlockTypes::NewMapTrigger(new_map_id) =
-        //     self.get_map_block_type(self.pos.clone())
-        // {
-        //     if j == 0 {
-        //         self.cur_map = self.maps[new_map_id as usize].clone();
-        //         let newpos = Pos {
-        //             i: self.pos.i,
-        //             j: self.cur_map.len() - 1,
-        //         };
-        //         self.pos = newpos;
-        //     }
-        // } else {
-        //     let newpos = Pos {
-        //         i: self.pos.i,
-        //         j: self.pos.j - 1,
-        //     };
-        //     self.pos = newpos;
-        // }
         let map_block = cur_block_is_new_map_block(self.get_map_block_type(self.pos.clone()));
         if j == 0 && map_block.is_some() {
             self.cur_map = self.maps[map_block.unwrap() as usize].clone();
@@ -167,17 +131,32 @@ impl Movement for Game {
     }
 
     fn south(&mut self) {
-        if self.pos.j == self.cur_map.len() - 1
-            || self.get_map_block_type(Pos {
-                j: self.pos.j + 1,
+        let j = self.pos.j;
+        let map_block = cur_block_is_new_map_block(self.get_map_block_type(self.pos.clone()));
+        self.info_queue.queue(
+            "Debug".to_string(),
+            format!(
+                "j: {}, i: {}, mbt: {:?}",
+                j,
+                self.pos.i,
+                self.get_map_block_type(self.pos.clone())
+            ),
+        );
+        if j == self.cur_map.len() - 1 && map_block.is_some() {
+            self.cur_map = self.maps[map_block.unwrap() as usize].clone();
+            let newpos = Pos {
                 i: self.pos.i,
-            }) == &MapBlockTypes::NotWalkable
+                j: 0,
+            };
+            self.pos = newpos;
+            return;
+        }
+        if j != self.cur_map.len() - 1
+            && self.get_map_block_type(Pos {
+                j: j.clone() + 1,
+                i: self.pos.i,
+            }) != &MapBlockTypes::NotWalkable
         {
-            self.info_queue.queue(
-                "Error".to_string(),
-                "Dort kannst du nicht hin gehen".to_string(),
-            );
-        } else {
             let newpos = Pos {
                 i: self.pos.i,
                 j: self.pos.j + 1,
