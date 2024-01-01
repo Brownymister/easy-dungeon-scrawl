@@ -7,10 +7,9 @@ pub fn generate_map(map_str: String) -> Map {
 
     for (_, row_str) in map_str.lines().collect::<Vec<&str>>().iter().enumerate() {
         let mut row: Vec<MapBlockTypes> = vec![];
-        for (_, item) in row_str.split("|").filter(|x| x != &"").enumerate() {
+        for (_, item) in row_str.split("|").filter(|x| x != &" " && x != &"" ).enumerate() {
             row.push(get_block_type(item))
         }
-        println!("row str {} {:?}", row_str, row);
         map.push(row);
     }
     return map;
@@ -84,14 +83,16 @@ mod tests {
         let b = get_block_type("M1");
         println!("get_block_type {:?}", b);
         assert_eq!(b, crate::MapBlockTypes::NewMapTrigger(1));
+        let b = get_block_type("I0");
+        assert_eq!(b, crate::MapBlockTypes::ItemTrigger(0));
     }
 
     #[test]
     fn test_map_gen() {
         let map = generate_map(
-            " |x|M1|M1|x|x|x|x|x|x|x|
+"|x|M1|M1|x|x|x|x|x|x|x|
 |x|_|_|x|x|_|_|_|_|x|
-|x|_|_|x|x|_|IO|_|_|x|
+|x|_|_|x|x|_|I0|_|_|x|
 |x|_|_|x|x|_|_|_|_|x|
 |x|_|_|x|x|x|_|_|x|x|
 |x|_|_|x|x|x|_|_|x|x|
@@ -106,11 +107,10 @@ mod tests {
             .lines()
             .collect::<Vec<&str>>()
             .iter()
-            .rev()
             .for_each(|x| println!("{}", x));
         assert_eq!(
             visulize_map(&map, None),
-            " |x|_|_|x|x|x|x|x|x|x|
+            "|x|_|_|x|x|x|x|x|x|x|
 |x|_|_|x|x|_|_|_|_|x|
 |x|_|_|x|x|_|_|_|_|x|
 |x|_|_|x|x|_|_|_|_|x|
@@ -119,7 +119,8 @@ mod tests {
 |x|_|_|_|_|_|_|_|x|x|
 |x|x|x|_|_|_|x|x|x|x|
 |x|x|x|x|_|_|x|x|x|x|
-|x|x|x|x|_|_|x|x|x|x|"
+|x|x|x|x|_|_|x|x|x|x|
+"
                 .to_string()
         )
     }

@@ -1,7 +1,6 @@
 use crate::map_gen;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug)]
 pub struct Game {
@@ -24,11 +23,9 @@ pub struct InfoMessage {
 
 impl InfoMessage {
     fn new(title: String, message: String) -> InfoMessage {
-        let time = 0;
         return InfoMessage {
             title,
             message,
-            // time,
         };
     }
 }
