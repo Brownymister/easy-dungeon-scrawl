@@ -1,6 +1,6 @@
 use crate::map_gen;
 use serde::{Deserialize, Serialize};
-use std::collections::VecDeque;
+use std::{collections::VecDeque, net::Incoming};
 
 #[derive(Debug)]
 pub struct Game {
@@ -86,7 +86,7 @@ pub struct Enemy {
 //     pub intuition: i32,
 // }
 
-fn cur_block_is_new_map_block(map_block: &MapBlockTypes) -> Option<usize> {
+fn block_is_new_map(map_block: &MapBlockTypes) -> Option<usize> {
     if let &MapBlockTypes::NewMapTrigger(new_map_id) = map_block {
         Some(new_map_id)
     } else {
@@ -94,150 +94,113 @@ fn cur_block_is_new_map_block(map_block: &MapBlockTypes) -> Option<usize> {
     }
 }
 
+fn block_is_teleport_trigger(map_block: &MapBlockTypes) -> Option<(usize, usize, usize)> {
+    if let &MapBlockTypes::TeleportTrigger(teleport_id, j, i) = map_block {
+        Some((teleport_id, j, i))
+    } else {
+        None
+    }
+}
+
 impl Movement for Game {
     fn north(&mut self) {
-        let j = self.pos.j;
-        self.info_queue.queue(
-            "Debug".to_string(),
-            format!(
-                "j: {}, i: {}, mbt: {:?}",
-                j,
-                self.pos.i,
-                self.get_map_block_type(self.pos.clone())
-            ),
-        );
-        let map_block = cur_block_is_new_map_block(self.get_map_block_type(self.pos.clone()));
-        if j == 0 && map_block.is_some() {
-            self.cur_map = self.maps[map_block.unwrap() as usize].clone();
-            let newpos = Pos {
+        let mut incoming_block = Pos {
+            j: self.pos.j,
+            i: self.pos.i,
+        };
+        if (self.pos.j as isize - 1) >= 0 {
+            incoming_block.j -= 1;
+        }
+        self.movement(
+            incoming_block,
+            Pos {
                 i: self.pos.i,
                 j: self.cur_map.len() - 1,
-            };
+            },
+            self.pos.j == 0,
+        );
+    }
+
+    fn movement(&mut self, incoming_block: Pos, new_map_pos: Pos, is_edge: bool) {
+        let new_map_block_id = block_is_new_map(self.get_map_block_type(&self.pos.clone()));
+        if is_edge && new_map_block_id.is_some() {
+            self.cur_map = self.maps[new_map_block_id.unwrap() as usize].clone();
+            self.pos = new_map_pos;
+            return;
+        }
+
+        let teleport_id = block_is_teleport_trigger(self.get_map_block_type(&incoming_block));
+        if teleport_id.is_some() {
+            let (teleport_id, j, i) = teleport_id.unwrap();
+            self.cur_map = self.maps[teleport_id as usize].clone();
+            let newpos = Pos { i, j };
             self.pos = newpos;
             return;
         }
-        if j != 0
-            && self.get_map_block_type(Pos {
-                j: j.clone() - 1,
-                i: self.pos.i,
-            }) != &MapBlockTypes::NotWalkable
+        if !is_edge
+            && self.get_map_block_type(&incoming_block.clone()) != &MapBlockTypes::NotWalkable
         {
-            let newpos = Pos {
-                i: self.pos.i,
-                j: self.pos.j - 1,
-            };
-            self.pos = newpos;
+            self.pos = incoming_block;
         }
     }
 
     fn south(&mut self) {
-        let j = self.pos.j;
-        let map_block = cur_block_is_new_map_block(self.get_map_block_type(self.pos.clone()));
-        self.info_queue.queue(
-            "Debug".to_string(),
-            format!(
-                "j: {}, i: {}, mbt: {:?}",
-                j,
-                self.pos.i,
-                self.get_map_block_type(self.pos.clone())
-            ),
-        );
-        if j == self.cur_map.len() - 1 && map_block.is_some() {
-            self.cur_map = self.maps[map_block.unwrap() as usize].clone();
-            let newpos = Pos {
+        let mut incoming_block = Pos {
+            j: self.pos.j,
+            i: self.pos.i,
+        };
+        if (self.pos.j as isize + 1) < self.cur_map.len() as isize {
+            incoming_block.j += 1;
+        }
+        self.movement(
+            incoming_block,
+            Pos {
                 i: self.pos.i,
                 j: 0,
-            };
-            self.pos = newpos;
-            return;
-        }
-        if j != self.cur_map.len() - 1
-            && self.get_map_block_type(Pos {
-                j: j.clone() + 1,
-                i: self.pos.i,
-            }) != &MapBlockTypes::NotWalkable
-        {
-            let newpos = Pos {
-                i: self.pos.i,
-                j: self.pos.j + 1,
-            };
-            self.pos = newpos;
-        }
+            },
+            self.pos.j == self.cur_map.len() - 1,
+        );
     }
 
     fn west(&mut self) {
-        let j = self.pos.j;
-        self.info_queue.queue(
-            "Debug".to_string(),
-            format!(
-                "j: {}, i: {}, mbt: {:?}",
-                j,
-                self.pos.i,
-                self.get_map_block_type(self.pos.clone())
-            ),
+        let mut incoming_block = Pos {
+            j: self.pos.j,
+            i: self.pos.i,
+        };
+        if (self.pos.i as isize - 1) >= 0 {
+            incoming_block.i -= 1;
+        }
+        self.movement(
+            incoming_block,
+            Pos {
+                i: self.cur_map[self.pos.j].len() - 1,
+                j: self.pos.j,
+            },
+            self.pos.i == 0,
         );
-        let map_block = cur_block_is_new_map_block(self.get_map_block_type(self.pos.clone()));
-        if self.pos.i == 0 && map_block.is_some() {
-            self.cur_map = self.maps[map_block.unwrap() as usize].clone();
-            let newpos = Pos {
-                i: self.cur_map[j].len() - 1,
-                j: self.pos.j,
-            };
-            self.pos = newpos;
-            return;
-        }
-        if self.pos.i != 0
-            && self.get_map_block_type(Pos {
-                j: j.clone(),
-                i: self.pos.i - 1,
-            }) != &MapBlockTypes::NotWalkable
-        {
-            let newpos = Pos {
-                i: self.pos.i - 1,
-                j: self.pos.j,
-            };
-            self.pos = newpos;
-        }
     }
 
     fn east(&mut self) {
-        let j = self.pos.j;
-        self.info_queue.queue(
-            "Debug".to_string(),
-            format!(
-                "j: {}, i: {}, mbt: {:?}",
-                j,
-                self.pos.i,
-                self.get_map_block_type(self.pos.clone())
-            ),
-        );
-        let map_block = cur_block_is_new_map_block(self.get_map_block_type(self.pos.clone()));
-        if self.pos.i == self.cur_map[j].len() - 1 && map_block.is_some() {
-            self.cur_map = self.maps[map_block.unwrap() as usize].clone();
-            let newpos = Pos {
+        let mut incoming_block = Pos {
+            j: self.pos.j,
+            i: self.pos.i,
+        };
+        if (self.pos.i as isize + 1) < self.cur_map[self.pos.j].len() as isize {
+            incoming_block.i += 1;
+        }
+        self.movement(
+            incoming_block,
+            Pos {
                 i: 0,
                 j: self.pos.j,
-            };
-            self.pos = newpos;
-            return;
-        }
-        if self.pos.i != self.cur_map[j].len() - 1
-            && self.get_map_block_type(Pos {
-                j: j.clone(),
-                i: self.pos.i + 1,
-            }) != &MapBlockTypes::NotWalkable
-        {
-            let newpos = Pos {
-                i: self.pos.i + 1,
-                j: self.pos.j,
-            };
-            self.pos = newpos;
-        }
+            },
+            self.pos.i == self.cur_map[self.pos.j].len() - 1,
+        );
     }
 }
 
 impl Game {
-    fn get_map_block_type(&self, pos: Pos) -> &MapBlockTypes {
+    fn get_map_block_type(&self, pos: &Pos) -> &MapBlockTypes {
         let row = &self.cur_map[pos.j];
         let map_block = &row[pos.i];
         return &map_block;
@@ -287,6 +250,7 @@ pub trait Movement {
     fn south(&mut self) {}
     fn west(&mut self) {}
     fn east(&mut self) {}
+    fn movement(&mut self, new_pos: Pos, new_map_pos: Pos, is_edge: bool) {}
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -295,6 +259,7 @@ pub enum MapBlockTypes {
     NotWalkable,
     Trap,
     NewMapTrigger(usize),
+    TeleportTrigger(usize, usize, usize),
     EnemyTrigger(usize),
     ItemTrigger(usize),
 }
