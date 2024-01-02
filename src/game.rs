@@ -207,7 +207,7 @@ impl Game {
     }
 
     pub fn new() -> Game {
-        let game_settings_res = crate::custom_layer::parse_game_settings("test.toml");
+        let game_settings_res = crate::custom_layer::parse_game_settings("test.yaml");
         let game_settings;
         match game_settings_res {
             Ok(v) => game_settings = v,

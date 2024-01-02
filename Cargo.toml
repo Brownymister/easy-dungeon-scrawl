@@ -16,4 +16,5 @@ tui = { version = "0.14", default-features = false, features = ['crossterm', 'se
 thiserror = "1.0"
 log = "0.4.20"
 log4rs = "1.2.0"
+serde_yaml = "0.9.30"
 

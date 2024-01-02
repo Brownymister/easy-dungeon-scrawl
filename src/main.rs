@@ -55,6 +55,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (tx, rx) = mpsc::channel();
     let tick_rate = Duration::from_millis(100);
     let mut global_game = Game::new();
+    // println!("global game: {:?}", global_game);
     thread::spawn(move || {
         let mut last_tick = Instant::now();
         loop {

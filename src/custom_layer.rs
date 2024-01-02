@@ -24,9 +24,9 @@ pub struct GameSettingsPlayer {
     pub rp_properties: RpProperties,
 }
 
-pub fn parse_game_settings(file_name: &str) -> Result<GameSettings, toml::de::Error> {
+pub fn parse_game_settings(file_name: &str) -> Result<GameSettings, serde_yaml::Error> {
     let contents = fs::read_to_string(file_name).expect("to be able to open the file");
-    let game_settings: Result<GameSettings, toml::de::Error> = toml::de::from_str(&contents);
+    let game_settings: Result<GameSettings, serde_yaml::Error> = serde_yaml::from_str(&contents);
     return game_settings;
 }
 
@@ -36,7 +36,7 @@ mod tests {
 
     #[test]
     fn test_parse_game_settings() {
-        let game_settings = parse_game_settings("test.toml").unwrap();
+        let game_settings = parse_game_settings("test.yaml").unwrap();
         println!("{:?}", game_settings);
     }
 }

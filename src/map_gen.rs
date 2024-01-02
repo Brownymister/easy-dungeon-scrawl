@@ -2,8 +2,12 @@ use crate::MapBlockTypes;
 
 pub type Map = Vec<Vec<MapBlockTypes>>;
 
-pub fn generate_map(map_str: String) -> Map {
+pub fn generate_map(mut map_str: String) -> Map {
     let mut map = vec![];
+    map_str = map_str
+        .replace("\r", "\n")
+        .replace("\\n", "\n")
+        .replace(" ", "\n");
 
     for (_, row_str) in map_str.lines().collect::<Vec<&str>>().iter().enumerate() {
         let mut row: Vec<MapBlockTypes> = vec![];
@@ -16,6 +20,8 @@ pub fn generate_map(map_str: String) -> Map {
         }
         map.push(row);
     }
+    println!("map_str: {:?}", map_str.lines().collect::<Vec<&str>>());
+    println!("map: {:?}", map);
     return map;
 }
 
@@ -68,6 +74,7 @@ pub fn visulize_map(map: &Map, player_pos: Option<&crate::Pos>) -> String {
             let mut get_symbol = match &item {
                 MapBlockTypes::Path => "  ",
                 MapBlockTypes::NotWalkable => "XX",
+                MapBlockTypes::TeleportTrigger(_, _, _) => "TT",
                 _ => "  ",
             };
             if player_pos.is_some() && j == player_pos.unwrap().j && i == player_pos.unwrap().i {
