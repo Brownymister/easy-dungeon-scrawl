@@ -1,4 +1,3 @@
-use chrono::Local;
 use crossterm::{
     event::{self, Event as CEvent, KeyCode},
     terminal::{disable_raw_mode, enable_raw_mode},
@@ -11,15 +10,12 @@ use std::io;
 use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
-use std::time::{SystemTime, UNIX_EPOCH};
 use tui::{
     backend::CrosstermBackend,
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Style},
     text::{Span, Spans},
-    widgets::{
-        Block, BorderType, Borders, Cell, List, ListItem, ListState, Paragraph, Row, Table, Tabs,
-    },
+    widgets::{Block, BorderType, Borders, Paragraph},
     Terminal,
 };
 
@@ -37,6 +33,7 @@ enum Event<I> {
 enum MenuItem {
     Game,
     Help,
+    Inventory,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -55,7 +52,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (tx, rx) = mpsc::channel();
     let tick_rate = Duration::from_millis(100);
     let mut global_game = Game::new();
-    // println!("global game: {:?}", global_game);
     thread::spawn(move || {
         let mut last_tick = Instant::now();
         loop {
@@ -136,6 +132,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 MenuItem::Help => {
                     rect.render_widget(render_help(), chunks[0]);
                 }
+                MenuItem::Inventory => {
+                    rect.render_widget(render_inventory(&global_game), chunks[0]);
+                }
             }
         })?;
 
@@ -161,6 +160,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         active_menu_item = MenuItem::Game;
                     }
                 }
+                KeyCode::Char('i') => {
+                    if active_menu_item == MenuItem::Game {
+                        active_menu_item = MenuItem::Inventory;
+                    } else {
+                        active_menu_item = MenuItem::Game;
+                    }
+                }
                 _ => {}
             },
             Event::Tick => {}
@@ -181,6 +187,21 @@ fn render_home<'a>(global_game: &'a Game) -> Paragraph<'a> {
                 .title(global_game.playername.as_str())
                 .border_type(BorderType::Plain),
         );
+}
+
+fn render_inventory<'a>(global_game: &'a Game) -> Paragraph<'a> {
+    return Paragraph::new(vec![Spans::from(vec![Span::styled(
+        "Inventory",
+        Style::default().fg(Color::Red),
+    )])])
+    .alignment(Alignment::Center)
+    .block(
+        Block::default()
+            .borders(Borders::ALL)
+            .style(Style::default().fg(Color::White))
+            .title("Inventory")
+            .border_type(BorderType::Plain),
+    );
 }
 
 fn render_help<'a>() -> Paragraph<'a> {

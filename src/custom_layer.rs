@@ -4,7 +4,7 @@ use std::fs;
 #[derive(Deserialize, Debug)]
 pub struct GameSettings {
     pub maps: Vec<String>,
-    pub global_items: Vec<crate::GameItem>,
+    pub global_items: Vec<crate::ItemProps>,
     pub player: GameSettingsPlayer,
     pub start_pos: [usize; 2],
 }

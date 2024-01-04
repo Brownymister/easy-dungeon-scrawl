@@ -1,13 +1,13 @@
 use crate::map_gen;
-use serde::{Deserialize, Serialize};
-use std::{collections::VecDeque, net::Incoming};
+use serde::Deserialize;
+use std::collections::VecDeque;
 
 #[derive(Debug)]
 pub struct Game {
     pub playername: String,
     pub health: i32,
-    pub global_items: Vec<GameItem>,
-    pub inventory: Vec<InventoryElement>,
+    pub global_items: Vec<ItemProps>,
+    pub inventory: Inventory,
     pub maps: Vec<map_gen::Map>,
     pub cur_map: map_gen::Map,
     pub pos: Pos,
@@ -21,7 +21,7 @@ pub struct InfoMessage {
 }
 
 impl InfoMessage {
-    fn new(title: String, message: String) -> InfoMessage {
+    pub fn new(title: String, message: String) -> InfoMessage {
         return InfoMessage { title, message };
     }
 }
@@ -65,9 +65,10 @@ pub struct Pos {
     pub j: usize,
 }
 
-#[derive(Deserialize, Debug)]
-pub struct GameItem {
-    pub item_id: String,
+#[derive(Deserialize, Debug, Clone)]
+pub struct ItemProps {
+    pub id: usize,
+    pub name: String,
     pub at: i32,
 }
 
@@ -103,24 +104,6 @@ fn block_is_teleport_trigger(map_block: &MapBlockTypes) -> Option<(usize, usize,
 }
 
 impl Movement for Game {
-    fn north(&mut self) {
-        let mut incoming_block = Pos {
-            j: self.pos.j,
-            i: self.pos.i,
-        };
-        if (self.pos.j as isize - 1) >= 0 {
-            incoming_block.j -= 1;
-        }
-        self.movement(
-            incoming_block,
-            Pos {
-                i: self.pos.i,
-                j: self.cur_map.len() - 1,
-            },
-            self.pos.j == 0,
-        );
-    }
-
     fn movement(&mut self, incoming_block: Pos, new_map_pos: Pos, is_edge: bool) {
         let new_map_block_id = block_is_new_map(self.get_map_block_type(&self.pos.clone()));
         if is_edge && new_map_block_id.is_some() {
@@ -140,8 +123,33 @@ impl Movement for Game {
         if !is_edge
             && self.get_map_block_type(&incoming_block.clone()) != &MapBlockTypes::NotWalkable
         {
+            if let &MapBlockTypes::ItemTrigger(item_id) =
+                self.get_map_block_type(&incoming_block.clone())
+            {
+                self.inventory
+                    .add_item(item_id, &self.global_items)
+                    .unwrap();
+            }
             self.pos = incoming_block;
         }
+    }
+
+    fn north(&mut self) {
+        let mut incoming_block = Pos {
+            j: self.pos.j,
+            i: self.pos.i,
+        };
+        if (self.pos.j as isize - 1) >= 0 {
+            incoming_block.j -= 1;
+        }
+        self.movement(
+            incoming_block,
+            Pos {
+                i: self.pos.i,
+                j: self.cur_map.len() - 1,
+            },
+            self.pos.j == 0,
+        );
     }
 
     fn south(&mut self) {
@@ -207,15 +215,13 @@ impl Game {
     }
 
     pub fn new() -> Game {
-        let game_settings_res = crate::custom_layer::parse_game_settings("test.yaml");
-        let game_settings;
-        match game_settings_res {
-            Ok(v) => game_settings = v,
+        let game_settings = match crate::custom_layer::parse_game_settings("test.yaml") {
+            Ok(v) => v,
             Err(e) => {
                 println!("Error while parsing toml file: {:?}", e);
                 std::process::exit(0);
             }
-        }
+        };
 
         let maps: Vec<map_gen::Map> = game_settings
             .maps
@@ -228,7 +234,7 @@ impl Game {
             cur_map: maps[0].clone(),
             health: game_settings.player.total_health,
             global_items: game_settings.global_items,
-            inventory: vec![],
+            inventory: Inventory::new(),
             pos: Pos {
                 i: game_settings.start_pos[0],
                 j: game_settings.start_pos[1],
@@ -237,12 +243,57 @@ impl Game {
             maps,
         };
     }
+
+    pub fn remove_item_from_map(&mut self, pos: Pos) {
+        todo!("impl remove item from map");
+    }
+
+    pub fn add_item_to_map(&mut self, pos: Pos, item_id: usize) {
+        todo!("impl add item to map");
+    }
 }
 
 #[derive(Debug)]
 pub struct InventoryElement {
-    pub item: GameItem,
-    pub count: usize,
+    pub acquisition_time: u128,
+    pub props: ItemProps,
+}
+
+#[derive(Debug)]
+pub struct Inventory {
+    pub inventory: Vec<InventoryElement>,
+}
+
+impl Inventory {
+    fn new() -> Inventory {
+        return Inventory { inventory: vec![] };
+    }
+
+    fn get_item_props(&self, item_id: &usize, global_items: &Vec<ItemProps>) -> Option<ItemProps> {
+        for item_prop in global_items {
+            if item_prop.id == *item_id {
+                return Some(item_prop.clone());
+            }
+        }
+
+        return None;
+    }
+
+    fn add_item(&mut self, id: usize, global_items: &Vec<ItemProps>) -> Result<(), String> {
+        let props = self
+            .get_item_props(&id, global_items)
+            .ok_or("Item not found".to_string())?;
+
+        let item = InventoryElement {
+            acquisition_time: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis(),
+            props,
+        };
+        self.inventory.push(item);
+        return Ok(());
+    }
 }
 
 pub trait Movement {
