@@ -21,6 +21,7 @@ use tui::{
 
 mod custom_layer;
 mod game;
+mod info_manager;
 mod map_gen;
 use game::*;
 
@@ -96,9 +97,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 global_game.info_queue.timer -= 1;
             }
 
-            let binding = InfoMessage {
+            let binding = crate::info_manager::InfoMessage {
                 title: "".to_string(),
                 message: "".to_string(),
+                counter: 1,
             };
 
             let info_widget = Paragraph::new(
@@ -106,8 +108,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .info_queue
                     .head()
                     .unwrap_or(&binding)
-                    .message
-                    .as_str(),
+                    .to_string(),
             )
             .style(Style::default().fg(Color::LightCyan))
             .alignment(Alignment::Center)

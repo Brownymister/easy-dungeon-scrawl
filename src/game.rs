@@ -1,6 +1,6 @@
+use crate::info_manager::*;
 use crate::map_gen;
 use serde::Deserialize;
-use std::collections::VecDeque;
 
 #[derive(Debug)]
 pub struct Game {
@@ -12,51 +12,6 @@ pub struct Game {
     pub cur_map: map_gen::Map,
     pub pos: Pos,
     pub info_queue: InfoQueue,
-}
-
-#[derive(Debug)]
-pub struct InfoMessage {
-    pub title: String,
-    pub message: String,
-}
-
-impl InfoMessage {
-    pub fn new(title: String, message: String) -> InfoMessage {
-        return InfoMessage { title, message };
-    }
-}
-
-#[derive(Debug)]
-pub struct InfoQueue {
-    pub queue: VecDeque<InfoMessage>,
-    pub timer: usize,
-}
-
-impl InfoQueue {
-    pub fn new() -> InfoQueue {
-        return InfoQueue {
-            queue: VecDeque::new(),
-            timer: 30,
-        };
-    }
-
-    pub fn queue(&mut self, title: String, message: String) {
-        let head = self.head();
-        if !(head.is_some() && head.unwrap().title == title && head.unwrap().message == message) {
-            let info = InfoMessage::new(title, message);
-            self.queue.push_back(info);
-            log::info!("{:?}", self.queue);
-        }
-    }
-
-    pub fn dequeue(&mut self) {
-        self.timer = 30;
-        self.queue.pop_front();
-    }
-
-    pub fn head(&self) -> Option<&InfoMessage> {
-        self.queue.front()
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -129,6 +84,8 @@ impl Movement for Game {
                 self.inventory
                     .add_item(item_id, &self.global_items)
                     .unwrap();
+                self.info_queue
+                    .queue("Item".to_string(), self.global_items[item_id].name.clone());
             }
             self.pos = incoming_block;
         }
