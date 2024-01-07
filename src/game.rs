@@ -9,7 +9,7 @@ pub struct Game {
     pub global_items: Vec<ItemProps>,
     pub inventory: Inventory,
     pub maps: Vec<map_gen::Map>,
-    pub cur_map: map_gen::Map,
+    pub cur_map: usize,
     pub pos: Pos,
     pub info_queue: InfoQueue,
 }
@@ -62,7 +62,7 @@ impl Movement for Game {
     fn movement(&mut self, incoming_block: Pos, new_map_pos: Pos, is_edge: bool) {
         let new_map_block_id = block_is_new_map(self.get_map_block_type(&self.pos.clone()));
         if is_edge && new_map_block_id.is_some() {
-            self.cur_map = self.maps[new_map_block_id.unwrap() as usize].clone();
+            self.cur_map = new_map_block_id.unwrap();
             self.pos = new_map_pos;
             return;
         }
@@ -70,7 +70,7 @@ impl Movement for Game {
         let teleport_id = block_is_teleport_trigger(self.get_map_block_type(&incoming_block));
         if teleport_id.is_some() {
             let (teleport_id, j, i) = teleport_id.unwrap();
-            self.cur_map = self.maps[teleport_id as usize].clone();
+            self.cur_map = teleport_id;
             let newpos = Pos { i, j };
             self.pos = newpos;
             return;
@@ -84,8 +84,11 @@ impl Movement for Game {
                 self.inventory
                     .add_item(item_id, &self.global_items)
                     .unwrap();
+
                 self.info_queue
                     .queue("Item".to_string(), self.global_items[item_id].name.clone());
+
+                self.remove_item_from_map(&incoming_block);
             }
             self.pos = incoming_block;
         }
@@ -103,7 +106,7 @@ impl Movement for Game {
             incoming_block,
             Pos {
                 i: self.pos.i,
-                j: self.cur_map.len() - 1,
+                j: self.maps[self.cur_map].len() - 1,
             },
             self.pos.j == 0,
         );
@@ -114,7 +117,7 @@ impl Movement for Game {
             j: self.pos.j,
             i: self.pos.i,
         };
-        if (self.pos.j as isize + 1) < self.cur_map.len() as isize {
+        if (self.pos.j as isize + 1) < self.maps[self.cur_map].len() as isize {
             incoming_block.j += 1;
         }
         self.movement(
@@ -123,7 +126,7 @@ impl Movement for Game {
                 i: self.pos.i,
                 j: 0,
             },
-            self.pos.j == self.cur_map.len() - 1,
+            self.pos.j == self.maps[self.cur_map].len() - 1,
         );
     }
 
@@ -138,7 +141,7 @@ impl Movement for Game {
         self.movement(
             incoming_block,
             Pos {
-                i: self.cur_map[self.pos.j].len() - 1,
+                i: self.maps[self.cur_map][self.pos.j].len() - 1,
                 j: self.pos.j,
             },
             self.pos.i == 0,
@@ -150,7 +153,7 @@ impl Movement for Game {
             j: self.pos.j,
             i: self.pos.i,
         };
-        if (self.pos.i as isize + 1) < self.cur_map[self.pos.j].len() as isize {
+        if (self.pos.i as isize + 1) < self.maps[self.cur_map][self.pos.j].len() as isize {
             incoming_block.i += 1;
         }
         self.movement(
@@ -159,14 +162,14 @@ impl Movement for Game {
                 i: 0,
                 j: self.pos.j,
             },
-            self.pos.i == self.cur_map[self.pos.j].len() - 1,
+            self.pos.i == self.maps[self.cur_map][self.pos.j].len() - 1,
         );
     }
 }
 
 impl Game {
     fn get_map_block_type(&self, pos: &Pos) -> &MapBlockTypes {
-        let row = &self.cur_map[pos.j];
+        let row = &self.maps[self.cur_map][pos.j];
         let map_block = &row[pos.i];
         return &map_block;
     }
@@ -188,7 +191,7 @@ impl Game {
 
         return Game {
             playername: game_settings.player.name,
-            cur_map: maps[0].clone(),
+            cur_map: 0,
             health: game_settings.player.total_health,
             global_items: game_settings.global_items,
             inventory: Inventory::new(),
@@ -201,11 +204,18 @@ impl Game {
         };
     }
 
-    pub fn remove_item_from_map(&mut self, pos: Pos) {
-        todo!("impl remove item from map");
+    pub fn remove_item_from_map(&mut self, pos: &Pos) {
+        for j in 0..self.maps[self.cur_map].len() {
+            let row = &self.maps[self.cur_map][j];
+            for i in 0..row.len() {
+                if i == pos.i && j == pos.j {
+                    self.maps[self.cur_map][j][i] = MapBlockTypes::Path;
+                }
+            }
+        }
     }
 
-    pub fn add_item_to_map(&mut self, pos: Pos, item_id: usize) {
+    pub fn add_item_to_map(&mut self, pos: &Pos, item_id: usize) {
         todo!("impl add item to map");
     }
 }
@@ -250,6 +260,15 @@ impl Inventory {
         };
         self.inventory.push(item);
         return Ok(());
+    }
+
+    pub fn to_string(&self) -> String {
+        let mut str = "".to_string();
+        for item in &self.inventory {
+            str += &item.props.name;
+            str += "\n";
+        }
+        return str;
     }
 }
 

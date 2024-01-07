@@ -178,7 +178,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn render_home<'a>(global_game: &'a Game) -> Paragraph<'a> {
-    let map_str = map_gen::visulize_map(&global_game.cur_map, Some(&global_game.pos));
+    let map_str = map_gen::visulize_map(
+        &global_game.maps[global_game.cur_map],
+        Some(&global_game.pos),
+    );
     return get_map_as_paragraph(map_str)
         .alignment(Alignment::Center)
         .block(
@@ -191,18 +194,15 @@ fn render_home<'a>(global_game: &'a Game) -> Paragraph<'a> {
 }
 
 fn render_inventory<'a>(global_game: &'a Game) -> Paragraph<'a> {
-    return Paragraph::new(vec![Spans::from(vec![Span::styled(
-        "Inventory",
-        Style::default().fg(Color::Red),
-    )])])
-    .alignment(Alignment::Center)
-    .block(
-        Block::default()
-            .borders(Borders::ALL)
-            .style(Style::default().fg(Color::White))
-            .title("Inventory")
-            .border_type(BorderType::Plain),
-    );
+    return Paragraph::new(global_game.inventory.to_string())
+        .alignment(Alignment::Center)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .style(Style::default().fg(Color::White))
+                .title("Inventory")
+                .border_type(BorderType::Plain),
+        );
 }
 
 fn render_help<'a>() -> Paragraph<'a> {

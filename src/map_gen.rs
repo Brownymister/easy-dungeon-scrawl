@@ -75,6 +75,7 @@ pub fn visulize_map(map: &Map, player_pos: Option<&crate::Pos>) -> String {
                 MapBlockTypes::Path => "  ",
                 MapBlockTypes::NotWalkable => "XX",
                 MapBlockTypes::TeleportTrigger(_, _, _) => "TT",
+                MapBlockTypes::ItemTrigger(_) => "@@",
                 _ => "  ",
             };
             if player_pos.is_some() && j == player_pos.unwrap().j && i == player_pos.unwrap().i {
