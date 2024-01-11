@@ -38,6 +38,12 @@ fn get_block_type(str: &str) -> MapBlockTypes {
         return MapBlockTypes::ItemTrigger(extract_first_match(item_trigger_caps.unwrap()));
     }
 
+    let enemy_trigger_re = regex::Regex::new(r"E(\d+)").unwrap();
+    let enemy_trigger_caps = enemy_trigger_re.captures(str);
+    if enemy_trigger_caps.is_some() {
+        return MapBlockTypes::EnemyTrigger(extract_first_match(enemy_trigger_caps.unwrap()));
+    }
+
     let tp_trigger_re = regex::Regex::new(r"T(.+)").unwrap();
     let tp_trigger_caps = tp_trigger_re.captures(str);
     if tp_trigger_caps.is_some() {
@@ -76,6 +82,7 @@ pub fn visulize_map(map: &Map, player_pos: Option<&crate::Pos>) -> String {
                 MapBlockTypes::NotWalkable => "XX",
                 MapBlockTypes::TeleportTrigger(_, _, _) => "TT",
                 MapBlockTypes::ItemTrigger(_) => "@@",
+                MapBlockTypes::EnemyTrigger(_) => "##",
                 _ => "  ",
             };
             if player_pos.is_some() && j == player_pos.unwrap().j && i == player_pos.unwrap().i {

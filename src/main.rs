@@ -31,10 +31,11 @@ enum Event<I> {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-enum MenuItem {
+pub enum MenuItem {
     Game,
     Help,
     Inventory,
+    Fight,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -75,7 +76,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     let stdout = io::stdout();
-    let mut active_menu_item = MenuItem::Game;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
     terminal.clear()?;
@@ -128,14 +128,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             );
 
             rect.render_widget(info_widget, chunks[1]);
-            match active_menu_item {
+            match global_game.active_menu_item {
                 MenuItem::Game => rect.render_widget(render_home(&global_game), chunks[0]),
-                MenuItem::Help => {
-                    rect.render_widget(render_help(), chunks[0]);
-                }
+                MenuItem::Help => rect.render_widget(render_help(), chunks[0]),
                 MenuItem::Inventory => {
-                    rect.render_widget(render_inventory(&global_game), chunks[0]);
+                    rect.render_widget(render_inventory(&global_game), chunks[0])
                 }
+                MenuItem::Fight => rect.render_widget(render_fight(), chunks[0]),
             }
         })?;
 
@@ -155,17 +154,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 KeyCode::Char('d') => global_game.east(),
                 KeyCode::Right => global_game.east(),
                 KeyCode::Char('h') => {
-                    if active_menu_item == MenuItem::Game {
-                        active_menu_item = MenuItem::Help;
+                    if global_game.active_menu_item == MenuItem::Game {
+                        global_game.active_menu_item = MenuItem::Help;
                     } else {
-                        active_menu_item = MenuItem::Game;
+                        global_game.active_menu_item = MenuItem::Game;
                     }
                 }
                 KeyCode::Char('i') => {
-                    if active_menu_item == MenuItem::Game {
-                        active_menu_item = MenuItem::Inventory;
+                    if global_game.active_menu_item == MenuItem::Game {
+                        global_game.active_menu_item = MenuItem::Inventory;
                     } else {
-                        active_menu_item = MenuItem::Game;
+                        global_game.active_menu_item = MenuItem::Game;
                     }
                 }
                 _ => {}
@@ -239,6 +238,17 @@ fn render_help<'a>() -> Paragraph<'a> {
             // .title("Home")
             .border_type(BorderType::Plain),
     );
+}
+
+fn render_fight<'a>() -> Paragraph<'a> {
+    return Paragraph::new(vec![Spans::from(vec![Span::raw("Fight")])])
+        .alignment(Alignment::Center)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .style(Style::default().fg(Color::White))
+                .border_type(BorderType::Plain),
+        );
 }
 
 fn get_map_as_paragraph(map: String) -> Paragraph<'static> {

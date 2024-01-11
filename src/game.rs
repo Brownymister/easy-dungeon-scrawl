@@ -12,6 +12,9 @@ pub struct Game {
     pub cur_map: usize,
     pub pos: Pos,
     pub info_queue: InfoQueue,
+    pub enemies: Vec<Enemy>,
+    pub cur_enemy: Option<Enemy>,
+    pub active_menu_item: crate::MenuItem,
 }
 
 #[derive(Debug, Clone)]
@@ -29,10 +32,11 @@ pub struct ItemProps {
 
 #[derive(Deserialize, Debug)]
 pub struct Enemy {
+    pub id: usize,
     pub name: String,
-    pub pos: (usize, usize),
-    pub health: i32,
-    pub weapon: String,
+    pub health: usize,
+    pub at: usize,
+    pub aw: usize,
 }
 
 // pub struct charakteristiks {
@@ -85,10 +89,20 @@ impl Movement for Game {
                     .add_item(item_id, &self.global_items)
                     .unwrap();
 
-                self.info_queue
-                    .queue("Item".to_string(), self.global_items[item_id].name.clone());
+                self.info_queue.queue(
+                    "Item".to_string(),
+                    "You have collected a ".to_string() + &self.global_items[item_id].name.clone(),
+                );
 
                 self.remove_item_from_map(&incoming_block);
+            } else if let &MapBlockTypes::EnemyTrigger(enemy_id) =
+                self.get_map_block_type(&incoming_block.clone())
+            {
+                self.active_menu_item = crate::MenuItem::Fight;
+                self.info_queue.queue(
+                    "Enemy".to_string(),
+                    "You have encountered a ".to_string() + &self.enemies[enemy_id].name.clone(),
+                );
             }
             self.pos = incoming_block;
         }
@@ -194,6 +208,7 @@ impl Game {
             cur_map: 0,
             health: game_settings.player.total_health,
             global_items: game_settings.global_items,
+            enemies: game_settings.enemies,
             inventory: Inventory::new(),
             pos: Pos {
                 i: game_settings.start_pos[0],
@@ -201,6 +216,8 @@ impl Game {
             },
             info_queue: InfoQueue::new(),
             maps,
+            cur_enemy: None,
+            active_menu_item: crate::MenuItem::Game,
         };
     }
 
