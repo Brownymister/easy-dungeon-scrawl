@@ -155,7 +155,7 @@ mod tests {
             visulize_map(&map, None),
             "XX    XXXXXXXXXXXXXX
 XX    XXXX        XX
-XX    XXXX        XX
+XX    XXXX  @@    XX
 XX    XXXX        XX
 XX    XXXXXX    XXXX
 XX    XXXXXX    XXXX
