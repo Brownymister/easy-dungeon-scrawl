@@ -4,17 +4,16 @@ use serde::Deserialize;
 
 #[derive(Debug)]
 pub struct Game {
+    /// used to interact with tui
     pub playername: String,
-    pub health: i32,
+    pub active_menu_item: crate::MenuItem,
+    pub info_queue: InfoQueue,
     pub global_items: Vec<ItemProps>,
-    pub inventory: Inventory,
+    pub entities: Vec<Entity>,
     pub maps: Vec<map_gen::Map>,
     pub cur_map: usize,
     pub pos: Pos,
-    pub info_queue: InfoQueue,
-    pub enemies: Vec<Enemy>,
-    pub cur_enemy: Option<Enemy>,
-    pub active_menu_item: crate::MenuItem,
+    pub inventory: Inventory,
 }
 
 #[derive(Debug, Clone)]
@@ -37,6 +36,25 @@ pub struct Enemy {
     pub health: usize,
     pub at: usize,
     pub aw: usize,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Entity {
+    pub name: String,
+    pub type_: EntityType,
+    pub hp: i32,
+    /// item_id in global_items
+    pub meele_weapon: Option<usize>,
+    /// item_id in global_items
+    pub ranged_weapon: Option<usize>,
+    pub at: Option<usize>,
+    pub aw: Option<usize>,
+}
+
+#[derive(Debug, Deserialize)]
+pub enum EntityType {
+    Player,
+    Enemy,
 }
 
 // pub struct charakteristiks {
@@ -101,7 +119,8 @@ impl Movement for Game {
                 self.active_menu_item = crate::MenuItem::Fight;
                 self.info_queue.queue(
                     "Enemy".to_string(),
-                    "You have encountered a ".to_string() + &self.enemies[enemy_id].name.clone(),
+                    "You have encountered a ".to_string()
+                        + &self.entities[enemy_id + 1].name.clone(),
                 );
             }
             self.pos = incoming_block;
@@ -189,7 +208,7 @@ impl Game {
     }
 
     pub fn new() -> Game {
-        let game_settings = match crate::custom_layer::parse_game_settings("test.yaml") {
+        let mut game_settings = match crate::custom_layer::parse_game_settings("test.yaml") {
             Ok(v) => v,
             Err(e) => {
                 println!("Error while parsing toml file: {:?}", e);
@@ -203,12 +222,23 @@ impl Game {
             .map(|map_str| map_gen::generate_map(map_str.to_string()))
             .collect();
 
+        let mut entities = vec![Entity {
+            hp: game_settings.player.total_health.clone(),
+            name: game_settings.player.name.clone(),
+            meele_weapon: None,
+            ranged_weapon: None,
+            type_: EntityType::Player,
+            aw: None,
+            at: None,
+        }];
+        entities.append(&mut game_settings.enemies);
+
         return Game {
             playername: game_settings.player.name,
             cur_map: 0,
-            health: game_settings.player.total_health,
+            // health: game_settings.player.total_health,
             global_items: game_settings.global_items,
-            enemies: game_settings.enemies,
+            entities,
             inventory: Inventory::new(),
             pos: Pos {
                 i: game_settings.start_pos[0],
@@ -216,7 +246,6 @@ impl Game {
             },
             info_queue: InfoQueue::new(),
             maps,
-            cur_enemy: None,
             active_menu_item: crate::MenuItem::Game,
         };
     }
@@ -301,7 +330,6 @@ pub trait Movement {
 pub enum MapBlockTypes {
     Path,
     NotWalkable,
-    Trap,
     NewMapTrigger(usize),
     TeleportTrigger(usize, usize, usize),
     EnemyTrigger(usize),

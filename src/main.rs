@@ -20,6 +20,7 @@ use tui::{
 };
 
 mod custom_layer;
+mod fight;
 mod game;
 mod info_manager;
 mod map_gen;

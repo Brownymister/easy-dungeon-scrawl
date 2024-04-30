@@ -39,19 +39,27 @@ global_items: !!seq
     - id: 0
       name: Sword
       at: 6
+
     - id: 1
       name: Boots
       at: 3
 
+    - id: 2
+      name: Bow
+      at: 3
+
 enemies: !!seq
     - id: 0
-      name: "Riesen Ratte"
-      health: 10
+      name: "Troll"
+      hp: 10
       at: 3
       aw: 3
+      type_: "Enemy"
+      meele_weapon: 0
+      ranged_weapon: 2
 
 player:
-    name: Julian
+    name: Hans
     total_health: 30
     character_type: Zauberer
     rp_properties:

@@ -7,7 +7,7 @@ pub struct GameSettings {
     pub global_items: Vec<crate::ItemProps>,
     pub player: GameSettingsPlayer,
     pub start_pos: [usize; 2],
-    pub enemies: Vec<crate::Enemy>,
+    pub enemies: Vec<crate::Entity>,
 }
 
 #[derive(Deserialize, Debug)]
