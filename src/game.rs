@@ -14,6 +14,7 @@ pub struct Game {
     pub cur_map: usize,
     pub pos: Pos,
     pub inventory: Inventory,
+    pub fight: Option<crate::fight::Fight>,
 }
 
 #[derive(Debug, Clone)]
@@ -29,17 +30,9 @@ pub struct ItemProps {
     pub at: i32,
 }
 
-#[derive(Deserialize, Debug)]
-pub struct Enemy {
-    pub id: usize,
-    pub name: String,
-    pub health: usize,
-    pub at: usize,
-    pub aw: usize,
-}
-
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Entity {
+    pub id: isize,
     pub name: String,
     pub type_: EntityType,
     pub hp: i32,
@@ -51,7 +44,7 @@ pub struct Entity {
     pub aw: Option<usize>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub enum EntityType {
     Player,
     Enemy,
@@ -223,6 +216,7 @@ impl Game {
             .collect();
 
         let mut entities = vec![Entity {
+            id: 0,
             hp: game_settings.player.total_health.clone(),
             name: game_settings.player.name.clone(),
             meele_weapon: None,
@@ -247,6 +241,7 @@ impl Game {
             info_queue: InfoQueue::new(),
             maps,
             active_menu_item: crate::MenuItem::Game,
+            fight: None,
         };
     }
 

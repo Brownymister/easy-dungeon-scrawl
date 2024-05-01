@@ -135,7 +135,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 MenuItem::Inventory => {
                     rect.render_widget(render_inventory(&global_game), chunks[0])
                 }
-                MenuItem::Fight => rect.render_widget(render_fight(), chunks[0]),
+                MenuItem::Fight => rect.render_widget(render_fight(&mut global_game), chunks[0]),
             }
         })?;
 
@@ -241,15 +241,36 @@ fn render_help<'a>() -> Paragraph<'a> {
     );
 }
 
-fn render_fight<'a>() -> Paragraph<'a> {
-    return Paragraph::new(vec![Spans::from(vec![Span::raw("Fight")])])
-        .alignment(Alignment::Center)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .style(Style::default().fg(Color::White))
-                .border_type(BorderType::Plain),
-        );
+fn render_fight(global_game: &mut Game) -> Paragraph {
+    let mut ini_str = "".to_string();
+    let mut player_str = "".to_string();
+    let fight = global_game.fight.clone();
+
+    if fight.is_none() {
+        let mut new_fight = crate::fight::Fight::new(global_game.entities.clone());
+        new_fight.ini();
+        global_game.fight = Some(new_fight);
+    } else {
+        for item in &fight.as_ref().unwrap().iniative {
+            ini_str += &item.to_string();
+            ini_str += "    ";
+        }
+        for item in &fight.as_ref().unwrap().entities {
+            player_str += &item.name;
+            player_str += "    ";
+        }
+    }
+    return Paragraph::new(vec![
+        Spans::from(vec![Span::raw(player_str)]),
+        Spans::from(vec![Span::raw(ini_str)]),
+    ])
+    .alignment(Alignment::Center)
+    .block(
+        Block::default()
+            .borders(Borders::ALL)
+            .style(Style::default().fg(Color::White))
+            .border_type(BorderType::Plain),
+    );
 }
 
 fn get_map_as_paragraph(map: String) -> Paragraph<'static> {
